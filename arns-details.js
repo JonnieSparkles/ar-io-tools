@@ -8,14 +8,12 @@ const CONFIG = {
     limit: 10,
 };
 
-const GATEWAY_URL = 'https://ar-io.net';
+const GATEWAY_URL = 'https://vilenarios.com';
 
 async function fetchArnsDetails() {
     try {
         // Fetch all registered ArNS records
         const records = await fetchAllArNSRecords({ gatewayUrl: GATEWAY_URL });
-        console.log('Raw response from fetchAllArNSRecords:', records);
-
         if (!records || typeof records !== 'object') {
             console.error('Error: fetchAllArNSRecords did not return an object.');
             return;
@@ -26,29 +24,33 @@ async function fetchArnsDetails() {
             name,
             ...details,
         }));
-
         console.log(`Fetched ${recordsArray.length} records`);
 
         const names = recordsArray.map(record => record.name);
 
         // Determine which names to process
         let selectedNames = [];
-        if (CONFIG.mode === 'specific') {
-            if (names.includes(CONFIG.specificName)) {
-                selectedNames = [CONFIG.specificName];
-            } else {
-                console.error(`Specific name '${CONFIG.specificName}' not found.`);
+        switch (CONFIG.mode) {
+            case 'specific':
+                if (names.includes(CONFIG.specificName)) {
+                    selectedNames = [CONFIG.specificName];
+                } else {
+                    console.error(`Specific name '${CONFIG.specificName}' not found.`);
+                    return;
+                }
+                break;
+            case 'single':
+                selectedNames = names.slice(0, 1); // Select the first name
+                break;
+            case 'limit':
+                selectedNames = names.slice(0, CONFIG.limit);
+                break;
+            case 'all':
+                selectedNames = names;
+                break;
+            default:
+                console.error(`Invalid mode: ${CONFIG.mode}`);
                 return;
-            }
-        } else if (CONFIG.mode === 'single') {
-            selectedNames = names.slice(0, 1); // Select the first name
-        } else if (CONFIG.mode === 'limit') {
-            selectedNames = names.slice(0, CONFIG.limit);
-        } else if (CONFIG.mode === 'all') {
-            selectedNames = names;
-        } else {
-            console.error(`Invalid mode: ${CONFIG.mode}`);
-            return;
         }
 
         console.log(`Processing ${selectedNames.length} name(s)...`);
@@ -66,7 +68,9 @@ async function fetchArnsDetails() {
                 results.push({
                     name: record.name,
                     owner: owner || 'Unknown',
-                    startTime: record.startTimestamp || 'Unknown', // Unix timestamp
+                    startTime: record.startTimestamp
+                        ? Math.floor(record.startTimestamp / 1000) // Convert milliseconds to seconds
+                        : 'Unknown',
                     purchaseType: record.type || 'Unknown',
                     processId: record.processId || 'Unknown',
                 });
@@ -75,7 +79,9 @@ async function fetchArnsDetails() {
                 results.push({
                     name: record.name,
                     owner: 'Error fetching owner',
-                    startTime: record.startTimestamp || 'Unknown',
+                    startTime: record.startTimestamp
+                        ? Math.floor(record.startTimestamp / 1000) // Convert milliseconds to seconds
+                        : 'Unknown',
                     purchaseType: record.type || 'Unknown',
                     processId: record.processId || 'Unknown',
                 });
@@ -87,7 +93,7 @@ async function fetchArnsDetails() {
             return;
         }
 
-        console.log('Results to save:', results);
+        console.log('Saving results to file...');
 
         const outputFolder = path.join(process.cwd(), 'output');
         await fs.mkdir(outputFolder, { recursive: true });
