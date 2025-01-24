@@ -42,17 +42,17 @@ async function main() {
                 const antRecords = await withTimeout(ant.getRecords(), 5000); // 5-second timeout
                 const atTransactionId = antRecords['@']?.transactionId || 'Not available';
         
-                // Add explicitly ordered fields to results
+                // Add fields in specific order
                 results.push({
-                    name: record.name,
-                    owner, // Dynamically fetched owner
-                    atTransactionId, // Dynamically fetched @ transactionId
-                    startTimestamp: record.startTimestamp,
-                    endTimestamp: record.endTimestamp,
-                    processId: record.processId,
-                    type: record.type,
-                    purchasePrice: record.purchasePrice,
-                    undernameLimit: record.undernameLimit,
+                    name: record.name,                     // Identity
+                    processId: record.processId,           // Reference
+                    type: record.type,                     // Type info
+                    startTimestamp: record.startTimestamp, // Time info
+                    endTimestamp: record.endTimestamp,     // Time info
+                    owner,                                 // Ownership
+                    atTransactionId,                       // Transaction
+                    purchasePrice: record.purchasePrice,   // Financial
+                    undernameLimit: record.undernameLimit, // Limits
                 });
         
                 console.log(
@@ -62,14 +62,14 @@ async function main() {
                 console.error(`Failed to process record for processId ${record.processId}:`, err.message);
                 results.push({
                     name: record.name,
-                    owner: err.message, // Log the error
+                    processId: record.processId,
                     type: record.type,
-                    atTransactionId: 'Error fetching @ transactionId', // Handle missing @ transactionId
                     startTimestamp: record.startTimestamp,
                     endTimestamp: record.endTimestamp,
+                    owner: err.message, // Log the error
+                    atTransactionId: 'Error fetching @ transactionId',
                     purchasePrice: record.purchasePrice,
                     undernameLimit: record.undernameLimit,
-                    processId: record.processId,
                 });
             }
         
