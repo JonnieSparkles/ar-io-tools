@@ -1,44 +1,72 @@
-# ArNS Details Fetcher
+# AR.IO Tools
 
-This script uses the AR.IO SDK to fetch details about Arweave Name System (ArNS) names. It retrieves the name, owner, start time, and purchase type for registered ArNS names. The script supports flexible processing modes, allowing you to target specific names or fetch data incrementally before running it on all names.
+A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools make it easier to interact with the Arweave Name System (ArNS), process Arweave Name Tokens (ANTs), and perform various tasks related to the AR.IO ecosystem.
 
-## Features
+This repository includes:
 
-- Fetch all ArNS names from the AR.IO network or a subset based on the selected mode:
+1. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
+2. *(Future tools can be added here as the repository grows.)*
+
+---
+
+## Tool: ArNS Details Fetcher
+
+### Description
+
+The ArNS Details Fetcher script retrieves data about registered ArNS names, including:
+
+- **Name**
+- **Owner**
+- **Start Time**
+- **Purchase Type** (Lease or Permanent)
+
+The script allows flexible processing modes, enabling you to fetch details for a single name, a limited number of names, or all registered names.
+
+---
+
+### Features
+
+- Fetch ArNS names from the AR.IO network.
+- Modes for flexible data fetching:
   - **Specific Name**: Fetch details for a single, specified name.
   - **First Name**: Fetch details for the first name in the list.
   - **Limited Number of Names**: Fetch details for the first `N` names.
   - **All Names**: Fetch details for all available names.
-- Retrieve and process details for each name:
-  - **Name**
-  - **Owner**
-  - **Start Time**
-  - **Purchase Type** (Lease or Permanent)
 - Save results to a timestamped JSON file in the `output` directory.
 - Automatically creates the `output` folder if it doesn’t exist.
 
 ---
 
-## Requirements
+### Requirements
 
 - **Node.js**: Version 14 or higher.
 - **NPM**: Installed alongside Node.js.
 
 ---
 
-## Setup
+### Setup
 
-1. Clone the repository or copy the script into your project folder.
-2. Install the required dependency:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/ar-io-tools.git
+   cd ar-io-tools
+   ```
+
+2. Navigate to the ArNS Details Fetcher tool (if applicable):
+   ```bash
+   cd arns-details-fetcher
+   ```
+
+3. Install the required dependency:
    ```bash
    npm install @ar-io/sdk
    ```
 
 ---
 
-## Configuration
+### Configuration
 
-The script includes a `CONFIG` object for controlling its behavior. You can edit the configuration to set the processing mode:
+Edit the `CONFIG` object in the script to set the desired processing mode:
 
 ```javascript
 const CONFIG = {
@@ -48,7 +76,7 @@ const CONFIG = {
 };
 ```
 
-### Modes
+#### Modes
 
 - **Specific Name (`specific`)**:
   - Fetches details for a specific name defined in `specificName`.
@@ -82,7 +110,7 @@ const CONFIG = {
 
 ---
 
-## Usage
+### Usage
 
 1. Update the `CONFIG` object in the script to select the desired mode and settings.
 2. Run the script:
@@ -101,7 +129,7 @@ const CONFIG = {
 
 ---
 
-## Example Output
+### Example Output
 
 The generated JSON file will look like this:
 
@@ -128,19 +156,7 @@ The generated JSON file will look like this:
 
 ---
 
-## Directory Structure
-
-```plaintext
-project-directory/
-├── script.js
-├── output/
-│   ├── arns_details-2025-01-24_14-30-00.json
-│   └── arns_details-2025-01-24_15-45-00.json
-```
-
----
-
-## Troubleshooting
+### Troubleshooting
 
 1. **Node.js Installation**:
    - If Node.js is not installed, download and install it from [Node.js Official Website](https://nodejs.org).
