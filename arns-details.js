@@ -71,6 +71,9 @@ async function fetchArnsDetails() {
                     startTime: record.startTimestamp
                         ? Math.floor(record.startTimestamp / 1000) // Convert milliseconds to seconds
                         : 'Unknown',
+                    endTime: record.endTimestamp
+                        ? Math.floor(record.endTimestamp / 1000) // Convert milliseconds to seconds
+                        : 'Unknown',
                     purchaseType: record.type || 'Unknown',
                     processId: record.processId || 'Unknown',
                 });
@@ -80,7 +83,10 @@ async function fetchArnsDetails() {
                     name: record.name,
                     owner: 'Error fetching owner',
                     startTime: record.startTimestamp
-                        ? Math.floor(record.startTimestamp / 1000) // Convert milliseconds to seconds
+                        ? Math.floor(record.startTimestamp / 1000)
+                        : 'Unknown',
+                    endTime: record.endTimestamp
+                        ? Math.floor(record.endTimestamp / 1000)
                         : 'Unknown',
                     purchaseType: record.type || 'Unknown',
                     processId: record.processId || 'Unknown',
