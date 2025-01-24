@@ -1,11 +1,12 @@
 {
   "name": "ar-io-tools",
   "version": "1.0.0",
-  "description": "A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools make it easier to interact with the Arweave Name System (ArNS), process Arweave Name Tokens (ANTs), and perform various tasks related to the AR.IO ecosystem.",
+  "description": "A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools include utilities for interacting with the Arweave Name System (ArNS), processing Arweave Name Tokens (ANTs), and converting JSON outputs to CSV format.",
   "main": "arns-details.js",
   "type": "module",
   "scripts": {
     "start": "node arns-details.js",
+    "json-to-csv": "node json-to-csv.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -14,11 +15,15 @@
     "tools",
     "sdk",
     "ar-ns",
-    "ant"
+    "ant",
+    "json",
+    "csv",
+    "conversion"
   ],
   "author": "",
   "license": "CC0-1.0",
   "dependencies": {
-    "@ar.io/sdk": "^3.2.0"
+    "@ar.io/sdk": "^3.2.0",
+    "json2csv": "^6.0.0-alpha.2"
   }
 }
