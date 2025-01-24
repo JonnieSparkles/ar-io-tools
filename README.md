@@ -34,6 +34,7 @@ The script allows flexible processing modes, enabling you to fetch details for a
   - **All Names**: Fetch details for all available names.
 - Save results to a timestamped JSON file in the `output` directory.
 - Automatically creates the `output` folder if it doesn’t exist.
+- Tracks dependencies in `package.json` for easy setup and reproducibility.
 
 ---
 
@@ -52,15 +53,16 @@ The script allows flexible processing modes, enabling you to fetch details for a
    cd ar-io-tools
    ```
 
-2. Navigate to the ArNS Details Fetcher tool (if applicable):
+2. Install dependencies:
    ```bash
-   cd arns-details-fetcher
+   npm install
    ```
 
-3. Install the required dependency:
-   ```bash
-   npm install @ar-io/sdk
-   ```
+   This command uses the `package.json` file to install the AR.IO SDK and any other dependencies automatically.
+
+3. Verify installation:
+   - Ensure the `node_modules/` folder exists.
+   - Confirm `package-lock.json` is generated.
 
 ---
 
@@ -115,7 +117,7 @@ const CONFIG = {
 1. Update the `CONFIG` object in the script to select the desired mode and settings.
 2. Run the script:
    ```bash
-   node script.js
+   node arns-details.js
    ```
 3. The output will be saved in the `output` directory with a filename in the format:
    ```
@@ -162,13 +164,25 @@ The generated JSON file will look like this:
    - If Node.js is not installed, download and install it from [Node.js Official Website](https://nodejs.org).
 
 2. **Dependency Installation**:
-   - Ensure `@ar-io/sdk` is installed in your project directory:
-     ```bash
-     npm install @ar-io/sdk
-     ```
+   - Run `npm install` to ensure all dependencies from `package.json` are installed.
 
 3. **Error Handling**:
    - If a specific name is not found (in `specific` mode), the script will log an error and skip processing.
+
+4. **Reinstalling Dependencies**:
+   - If you encounter issues, delete `node_modules/` and `package-lock.json`, then reinstall:
+     ```bash
+     rm -rf node_modules package-lock.json
+     npm install
+     ```
+
+5. **Check `package.json`**:
+   - Ensure the `dependencies` section includes:
+     ```json
+     "dependencies": {
+       "ar-io-sdk": "git+https://github.com/ar-io/ar-io-sdk.git"
+     }
+     ```
 
 ---
 

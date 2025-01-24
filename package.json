@@ -1,0 +1,24 @@
+{
+  "name": "ar-io-tools",
+  "version": "1.0.0",
+  "description": "A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools make it easier to interact with the Arweave Name System (ArNS), process Arweave Name Tokens (ANTs), and perform various tasks related to the AR.IO ecosystem.",
+  "main": "arns-details.js",
+  "type": "module",
+  "scripts": {
+    "start": "node arns-details.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ar-io",
+    "arweave",
+    "tools",
+    "sdk",
+    "ar-ns",
+    "ant"
+  ],
+  "author": "",
+  "license": "CC0-1.0",
+  "dependencies": {
+    "@ar.io/sdk": "^3.2.0"
+  }
+}
