@@ -26,11 +26,6 @@ async function main() {
 
         console.log(`Fetched ${records.items.length} records.`);
 
-        if (!Array.isArray(records.items)) {
-            console.error('Error: Fetched records.items is not an array.');
-            return;
-        }
-
         console.log('Starting to process records to fetch owners and @ transaction IDs...');
         const results = [];
 
