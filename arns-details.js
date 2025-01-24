@@ -1,11 +1,11 @@
-import { fetchAllArNSRecords } from '@ar.io/sdk';
+import { fetchAllArNSRecords, ANT } from '@ar.io/sdk';
 import fs from 'fs/promises';
 import path from 'path';
 
 const CONFIG = {
-    mode: 'specific', // Options: 'specific', 'single', 'limit', 'all'
+    mode: 'limit', // Options: 'specific', 'single', 'limit', 'all'
     specificName: 'jonniesparkles',
-    limit: 5,
+    limit: 10,
 };
 
 const GATEWAY_URL = 'https://ar-io.net';
@@ -53,17 +53,35 @@ async function fetchArnsDetails() {
 
         console.log(`Processing ${selectedNames.length} name(s)...`);
 
-        const results = selectedNames.map(name => {
+        const results = [];
+        for (const name of selectedNames) {
             const record = recordsArray.find(r => r.name === name);
-            return {
-                name: record?.name || 'Unknown',
-                owner: record?.owner || 'Unknown',
-                startTime: record?.startTimestamp || 'Unknown', // Unix timestamp
-                purchaseType: record?.type || 'Unknown',
-                processId: record?.processId || 'Unknown', // Add process ID
-            };
-        });
-        
+            if (!record) continue;
+
+            try {
+                // Initialize ANT and fetch owner
+                const ant = ANT.init({ processId: record.processId });
+                const owner = await ant.getOwner();
+
+                results.push({
+                    name: record.name,
+                    owner: owner || 'Unknown',
+                    startTime: record.startTimestamp || 'Unknown', // Unix timestamp
+                    purchaseType: record.type || 'Unknown',
+                    processId: record.processId || 'Unknown',
+                });
+            } catch (err) {
+                console.error(`Error fetching owner for processId ${record.processId}:`, err.message);
+                results.push({
+                    name: record.name,
+                    owner: 'Error fetching owner',
+                    startTime: record.startTimestamp || 'Unknown',
+                    purchaseType: record.type || 'Unknown',
+                    processId: record.processId || 'Unknown',
+                });
+            }
+        }
+
         if (results.length === 0) {
             console.error('No results to save. Exiting.');
             return;
