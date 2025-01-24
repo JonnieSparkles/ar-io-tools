@@ -21,22 +21,25 @@ The ArNS Details Fetcher script retrieves data about registered ArNS names, incl
 - **End Time**
 - **Purchase Type** (Lease or Permanent)
 - **@ Transaction ID**
+- **Process ID**
+- **Purchase Price**
+- **Undername Limit**
 
-The script allows flexible processing modes, enabling you to fetch details for a single name, a limited number of names, or all registered names.
+The script fetches the 10 most recent ArNS records and saves them with complete details.
 
 ---
 
 ### Features
 
-- Fetch ArNS names from the AR.IO network.
-- Modes for flexible data fetching:
-  - **Specific Name**: Fetch details for a single, specified name.
-  - **First Name**: Fetch details for the first name in the list.
-  - **Limited Number of Names**: Fetch details for the first `N` names.
-  - **All Names**: Fetch details for all available names.
-- Save results to a timestamped JSON file in the `output` directory.
-- Automatically creates the `output` folder if it doesn’t exist.
-- Tracks dependencies in `package.json` for easy setup and reproducibility.
+- Fetch recent ArNS names from the AR.IO network
+- Retrieve detailed information for each name:
+  - Owner address
+  - @ transaction ID
+  - Timestamps and duration
+  - Purchase details
+- Save results to a timestamped JSON file in the `output` directory
+- Handle network timeouts and errors gracefully
+- Automatically creates the `output` folder if it doesn't exist
 
 ---
 
@@ -50,17 +53,17 @@ The JSON-to-CSV Converter is a utility script that converts JSON files into CSV 
 
 ### Features
 
-- Converts any JSON array of objects to CSV.
-- Prompts for the input JSON file location and optionally for the output CSV file name.
-- Automatically saves the output CSV file in the `output` directory.
-- Dynamically extracts headers from JSON keys—no need to predefine them.
+- Converts any JSON array of objects to CSV
+- Prompts for the input JSON file location and optionally for the output CSV file name
+- Automatically saves the output CSV file in the `output` directory
+- Dynamically extracts headers from JSON keys—no need to predefine them
 
 ---
 
 ### Requirements
 
-- **Node.js**: Version 14 or higher.
-- **NPM**: Installed alongside Node.js.
+- **Node.js**: Version 18 or higher
+- **NPM**: Installed alongside Node.js
 
 ---
 
@@ -77,27 +80,20 @@ The JSON-to-CSV Converter is a utility script that converts JSON files into CSV 
    npm install
    ```
 
-   This command uses the `package.json` file to install all required libraries automatically.
-
 ---
 
 ### Usage: ArNS Details Fetcher
 
-1. Update the `CONFIG` object in `arns-details.js` to set the desired processing mode:
-   ```javascript
-   const CONFIG = {
-       mode: 'all', // Options: 'specific', 'single', 'limit', 'all'
-       specificName: 'example-name1', // For 'specific' mode
-       limit: 5, // For 'limit' mode (number of names to process)
-   };
-   ```
+Run the script:
+```bash
+npm start
+```
 
-2. Run the script:
-   ```bash
-   npm start
-   ```
-
-   The output will be saved in the `output` directory with a timestamped JSON filename.
+The script will:
+- Fetch the 10 most recent ArNS records
+- Retrieve owner and @ transaction ID for each record
+- Save results to a timestamped JSON file in the `output` directory
+- Handle timeouts and errors gracefully
 
 ---
 
@@ -109,8 +105,8 @@ The JSON-to-CSV Converter is a utility script that converts JSON files into CSV 
    ```
 
 2. Follow the prompts:
-   - **Input JSON File**: Enter the path to your JSON file.
-   - **Output CSV File**: Enter the name of the output file or press Enter to use the default name.
+   - **Input JSON File**: Enter the path to your JSON file
+   - **Output CSV File**: Enter the name of the output file or press Enter to use the default name
 
    Example prompts:
    ```plaintext
@@ -151,16 +147,16 @@ fusionfi,1737688760619,1769224760619,T0bTJrxmAIfZwrVtWXl97OlAeRjR-cyzobOq0-A_Jho
 ### Troubleshooting
 
 1. **Node.js Installation**:
-   - Download and install it from [Node.js Official Website](https://nodejs.org).
+   - Download and install it from [Node.js Official Website](https://nodejs.org)
 
 2. **Dependency Installation**:
-   - Run `npm install` to ensure all dependencies are installed.
+   - Run `npm install` to ensure all dependencies are installed
 
 3. **Missing Input File**:
-   - Ensure the input file exists at the specified path.
+   - Ensure the input file exists at the specified path
 
 4. **JSON Format Issues**:
-   - Make sure the JSON file is an array of objects. Nested objects may need to be flattened beforehand.
+   - Make sure the JSON file is an array of objects. Nested objects may need to be flattened beforehand
 
 ---
 
