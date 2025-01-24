@@ -87,7 +87,8 @@ async function main() {
         }
 
         // Write results to a file
-        const outputFile = path.join(outputDir, `${Date.now()}.json`);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19); // Format: YYYY-MM-DDTHH-mm-ss
+        const outputFile = path.join(outputDir, `arns-details_${timestamp}.json`);
         fs.writeFileSync(outputFile, JSON.stringify(results, null, 2));
 
         console.log(`Results saved to: ${outputFile}`);
