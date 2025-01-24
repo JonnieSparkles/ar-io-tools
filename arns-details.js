@@ -1,117 +1,91 @@
-import { fetchAllArNSRecords, ANT } from '@ar.io/sdk';
-import fs from 'fs/promises';
+import { ARIO, ANT, AOProcess } from '@ar.io/sdk';
+import { connect } from '@permaweb/aoconnect';
+import fs from 'fs';
 import path from 'path';
 
-const CONFIG = {
-    mode: 'limit', // Options: 'specific', 'single', 'limit', 'all'
-    specificName: 'jonniesparkles',
-    limit: 10,
-};
+// Initialize ARIO
+const ario = ARIO.init({
+    process: new AOProcess({
+        processId: "agYcCFJtrMG6cqMuZfskIkFTGvUPddICmtQSBIoPdiA",
+        ao: connect({
+            CU_URL: 'https://vilenarios.com/ao/cu', // Replace with your CU URL
+            GATEWAY_URL: 'https://vilenarios.com/', // Replace with your Gateway URL
+        }),
+    }),
+});
 
-const GATEWAY_URL = 'https://vilenarios.com';
+// Helper: Add timeout to a promise
+async function withTimeout(promise, timeoutMs) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Operation timed out')), timeoutMs)
+        ),
+    ]);
+}
 
-async function fetchArnsDetails() {
+async function main() {
     try {
-        // Fetch all registered ArNS records
-        const records = await fetchAllArNSRecords({ gatewayUrl: GATEWAY_URL });
-        if (!records || typeof records !== 'object') {
-            console.error('Error: fetchAllArNSRecords did not return an object.');
+        console.log('Fetching ArNS records...');
+        const records = await ario.getArNSRecords({
+            limit: 10,
+            sortBy: 'startTimestamp',
+            sortOrder: 'desc',
+        });
+
+        console.log(`Fetched ${records.items.length} records.`);
+
+        if (!Array.isArray(records.items)) {
+            console.error('Error: Fetched records.items is not an array.');
             return;
         }
 
-        // Convert the object to an array of records
-        const recordsArray = Object.entries(records).map(([name, details]) => ({
-            name,
-            ...details,
-        }));
-        console.log(`Fetched ${recordsArray.length} records`);
-
-        const names = recordsArray.map(record => record.name);
-
-        // Determine which names to process
-        let selectedNames = [];
-        switch (CONFIG.mode) {
-            case 'specific':
-                if (names.includes(CONFIG.specificName)) {
-                    selectedNames = [CONFIG.specificName];
-                } else {
-                    console.error(`Specific name '${CONFIG.specificName}' not found.`);
-                    return;
-                }
-                break;
-            case 'single':
-                selectedNames = names.slice(0, 1); // Select the first name
-                break;
-            case 'limit':
-                selectedNames = names.slice(0, CONFIG.limit);
-                break;
-            case 'all':
-                selectedNames = names;
-                break;
-            default:
-                console.error(`Invalid mode: ${CONFIG.mode}`);
-                return;
-        }
-
-        console.log(`Processing ${selectedNames.length} name(s)...`);
-
+        console.log('Starting to process records to fetch owners...');
         const results = [];
-        for (const name of selectedNames) {
-            const record = recordsArray.find(r => r.name === name);
-            if (!record) continue;
 
+        for (const [index, record] of records.items.entries()) {
             try {
-                // Initialize ANT and fetch owner
+                console.log(`Processing record ${index + 1}/${records.items.length}: ${record.name}`);
+
                 const ant = ANT.init({ processId: record.processId });
-                const owner = await ant.getOwner();
+
+                // Fetch owner with a timeout
+                const owner = await withTimeout(ant.getOwner(), 5000); // 5-second timeout
 
                 results.push({
-                    name: record.name,
-                    owner: owner || 'Unknown',
-                    startTime: record.startTimestamp
-                        ? Math.floor(record.startTimestamp / 1000) // Convert milliseconds to seconds
-                        : 'Unknown',
-                    endTime: record.endTimestamp
-                        ? Math.floor(record.endTimestamp / 1000) // Convert milliseconds to seconds
-                        : 'Unknown',
-                    purchaseType: record.type || 'Unknown',
-                    processId: record.processId || 'Unknown',
+                    ...record,
+                    owner,
                 });
+                console.log(`Successfully fetched owner for ${record.name}: ${owner}`);
             } catch (err) {
-                console.error(`Error fetching owner for processId ${record.processId}:`, err.message);
+                console.error(`Failed to fetch owner for processId ${record.processId}:`, err.message);
                 results.push({
-                    name: record.name,
-                    owner: 'Error fetching owner',
-                    startTime: record.startTimestamp
-                        ? Math.floor(record.startTimestamp / 1000)
-                        : 'Unknown',
-                    endTime: record.endTimestamp
-                        ? Math.floor(record.endTimestamp / 1000)
-                        : 'Unknown',
-                    purchaseType: record.type || 'Unknown',
-                    processId: record.processId || 'Unknown',
+                    ...record,
+                    owner: err.message, // Log the error in the record's owner field
                 });
+            }
+
+            if ((index + 1) % 100 === 0) {
+                console.log(`Processed ${index + 1}/${records.items.length} records so far...`);
             }
         }
 
-        if (results.length === 0) {
-            console.error('No results to save. Exiting.');
-            return;
+        console.log('Finished processing all records.');
+
+        // Ensure output directory exists
+        const outputDir = path.join(process.cwd(), 'output');
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
         }
 
-        console.log('Saving results to file...');
-
-        const outputFolder = path.join(process.cwd(), 'output');
-        await fs.mkdir(outputFolder, { recursive: true });
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-        const outputFile = path.join(outputFolder, `arns_details-${timestamp}.json`);
-        await fs.writeFile(outputFile, JSON.stringify(results, null, 2));
+        // Write results to a file
+        const outputFile = path.join(outputDir, `${Date.now()}.json`);
+        fs.writeFileSync(outputFile, JSON.stringify(results, null, 2));
 
         console.log(`Results saved to: ${outputFile}`);
     } catch (error) {
-        console.error('Error fetching ArNS details:', error);
+        console.error('Error fetching ArNS records:', error);
     }
 }
 
-fetchArnsDetails();
+main();
