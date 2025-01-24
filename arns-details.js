@@ -1,18 +1,9 @@
-import { ARIO, ANT, AOProcess } from '@ar.io/sdk';
-import { connect } from '@permaweb/aoconnect';
+import { ARIO, ANT } from '@ar.io/sdk';
 import fs from 'fs';
 import path from 'path';
 
 // Initialize ARIO
-const ario = ARIO.init({
-    process: new AOProcess({
-        processId: "agYcCFJtrMG6cqMuZfskIkFTGvUPddICmtQSBIoPdiA",
-        ao: connect({
-            CU_URL: 'https://vilenarios.com/ao/cu', // Replace with your CU URL
-            GATEWAY_URL: 'https://vilenarios.com/', // Replace with your Gateway URL
-        }),
-    }),
-});
+const ario = ARIO.init();
 
 // Helper: Add timeout to a promise
 async function withTimeout(promise, timeoutMs) {
@@ -40,35 +31,57 @@ async function main() {
             return;
         }
 
-        console.log('Starting to process records to fetch owners...');
+        console.log('Starting to process records to fetch owners and @ transaction IDs...');
         const results = [];
 
         for (const [index, record] of records.items.entries()) {
             try {
                 console.log(`Processing record ${index + 1}/${records.items.length}: ${record.name}`);
-
+        
                 const ant = ANT.init({ processId: record.processId });
-
+        
                 // Fetch owner with a timeout
                 const owner = await withTimeout(ant.getOwner(), 5000); // 5-second timeout
-
+        
+                // Fetch records for the ANT
+                const antRecords = await withTimeout(ant.getRecords(), 5000); // 5-second timeout
+                const atTransactionId = antRecords['@']?.transactionId || 'Not available';
+        
+                // Add explicitly ordered fields to results
                 results.push({
-                    ...record,
-                    owner,
+                    name: record.name,
+                    owner, // Dynamically fetched owner
+                    atTransactionId, // Dynamically fetched @ transactionId
+                    startTimestamp: record.startTimestamp,
+                    endTimestamp: record.endTimestamp,
+                    processId: record.processId,
+                    type: record.type,
+                    purchasePrice: record.purchasePrice,
+                    undernameLimit: record.undernameLimit,
                 });
-                console.log(`Successfully fetched owner for ${record.name}: ${owner}`);
+        
+                console.log(
+                    `Successfully fetched owner and @ transaction ID for ${record.name}: ${owner}, @: ${atTransactionId}`
+                );
             } catch (err) {
-                console.error(`Failed to fetch owner for processId ${record.processId}:`, err.message);
+                console.error(`Failed to process record for processId ${record.processId}:`, err.message);
                 results.push({
-                    ...record,
-                    owner: err.message, // Log the error in the record's owner field
+                    name: record.name,
+                    owner: err.message, // Log the error
+                    type: record.type,
+                    atTransactionId: 'Error fetching @ transactionId', // Handle missing @ transactionId
+                    startTimestamp: record.startTimestamp,
+                    endTimestamp: record.endTimestamp,
+                    purchasePrice: record.purchasePrice,
+                    undernameLimit: record.undernameLimit,
+                    processId: record.processId,
                 });
             }
-
+        
             if ((index + 1) % 100 === 0) {
                 console.log(`Processed ${index + 1}/${records.items.length} records so far...`);
             }
-        }
+        }        
 
         console.log('Finished processing all records.');
 
