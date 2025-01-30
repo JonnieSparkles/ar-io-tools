@@ -1,11 +1,12 @@
 # AR.IO Tools
 
-A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools make it easier to interact with the Arweave Name System (ArNS), process Arweave Name Tokens (ANTs), and convert JSON data to CSV for easier analysis.
+A collection of tools designed to work with the AR.IO SDK and the Arweave network. These tools make it easier to interact with the Arweave Name System (ArNS), process Arweave Name Tokens (ANTs), fetch Gateway details, and convert JSON data to CSV for easier analysis.
 
 This repository includes:
 
 1. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
-2. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
+2. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
+3. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
 
 ---
 
@@ -37,6 +38,41 @@ The script fetches the 10 most recent ArNS records and saves them with complete 
   - @ transaction ID
   - Timestamps and duration
   - Purchase details
+- Save results to a timestamped JSON file in the `output` directory
+- Handle network timeouts and errors gracefully
+- Automatically creates the `output` folder if it doesn't exist
+
+---
+
+## Tool: Gateway Details Fetcher
+
+### Description
+
+The Gateway Details Fetcher script retrieves data about AR.IO Gateways, with options for full or summary details:
+
+**Summary Details Include:**
+- Gateway Address
+- FQDN (Fully Qualified Domain Name)
+- Operator Stake
+- Status
+- Weights
+
+**Full Details Additionally Include:**
+- Observer Address
+- Settings (including label, note, port, properties, protocol)
+- Start Timestamp
+- Stats (epoch information)
+- Vaults
+
+The script fetches all available gateway records and saves them with your choice of detail level.
+
+---
+
+### Features
+
+- Interactive prompt to choose between full details or summary
+- Fetch all gateway records from the AR.IO network
+- Process and organize gateway data
 - Save results to a timestamped JSON file in the `output` directory
 - Handle network timeouts and errors gracefully
 - Automatically creates the `output` folder if it doesn't exist
@@ -97,6 +133,24 @@ The script will:
 
 ---
 
+### Usage: Gateway Details Fetcher
+
+Run the script:
+```bash
+npm run gateway-details
+```
+
+The script will:
+1. Prompt you to choose output type:
+   ```plaintext
+   Do you want FULL DETAILS or SUMMARY? (F/S):
+   ```
+2. Fetch all gateway records
+3. Process according to your choice
+4. Save results to a timestamped JSON file in the `output` directory
+
+---
+
 ### Usage: JSON-to-CSV Converter
 
 1. Run the script:
@@ -140,6 +194,28 @@ The script will:
 ```csv
 name,startTimestamp,endTimestamp,processId,type,purchasePrice,undernameLimit,owner
 fusionfi,1737688760619,1769224760619,T0bTJrxmAIfZwrVtWXl97OlAeRjR-cyzobOq0-A_Jho,lease,1652121190,10,arweave-wallet-address-1
+```
+
+---
+
+### Example Output: Gateway Details Fetcher
+
+#### Summary Output Format:
+```json
+{
+  "gatewayAddress": "QGWqtJdLLgm2ehFWiiPzMaoFLD50CnGuzZIPEdoDRGQ",
+  "fqdn": "ar-io.dev",
+  "operatorStake": 250000000000,
+  "status": "joined",
+  "weights": {
+    "compositeWeight": 0.97688888893556,
+    "gatewayRewardRatioWeight": 1,
+    "tenureWeight": 0.19444444444444,
+    "observerRewardRatioWeight": 1,
+    "normalizedCompositeWeight": 0.19247316211083,
+    "stakeWeight": 5.02400000024
+  }
+}
 ```
 
 ---
