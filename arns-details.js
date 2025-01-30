@@ -19,7 +19,7 @@ async function main() {
     try {
         console.log('Fetching ArNS records...');
         const records = await ario.getArNSRecords({
-            limit: 10,
+            limit: 10000,
             sortBy: 'startTimestamp',
             sortOrder: 'desc',
         });
@@ -98,3 +98,6 @@ async function main() {
 }
 
 main();
+
+
+//TODO: Add primary name to the JSON output
