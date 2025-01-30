@@ -3,6 +3,21 @@ import path from 'path';
 import readline from 'readline';
 import { parse } from 'json2csv'; // Install: npm install json2csv
 
+// Function to flatten nested objects
+function flattenObject(obj, prefix = '') {
+    return Object.keys(obj).reduce((acc, key) => {
+        const pre = prefix.length ? `${prefix}_` : '';
+        
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+            Object.assign(acc, flattenObject(obj[key], `${pre}${key}`));
+        } else {
+            acc[`${pre}${key}`] = obj[key];
+        }
+        
+        return acc;
+    }, {});
+}
+
 // Function to prompt the user for input
 function promptUser(question) {
     const rl = readline.createInterface({
@@ -34,6 +49,9 @@ async function convertJSONToCSV() {
             return;
         }
 
+        // Flatten each object in the array
+        const flattenedData = jsonData.map(item => flattenObject(item));
+
         // Extract the default output file name from the input file
         const inputFileName = path.basename(inputFilePath, path.extname(inputFilePath));
         const defaultOutputFileName = `${inputFileName}.csv`;
@@ -50,10 +68,10 @@ async function convertJSONToCSV() {
         }
         const outputFilePath = path.join(outputDir, outputFileName);
 
-        // Convert JSON to CSV
-        const fields = Object.keys(jsonData[0]); // Extract headers from the first object
+        // Convert flattened JSON to CSV
+        const fields = Array.from(new Set(flattenedData.flatMap(obj => Object.keys(obj)))); // Get all unique fields
         const opts = { fields };
-        const csv = parse(jsonData, opts);
+        const csv = parse(flattenedData, opts);
 
         // Write CSV file
         fs.writeFileSync(outputFilePath, csv);
