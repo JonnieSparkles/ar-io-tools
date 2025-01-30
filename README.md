@@ -83,16 +83,58 @@ The script fetches all available gateway records and saves them with your choice
 
 ### Description
 
-The JSON-to-CSV Converter is a utility script that converts JSON files into CSV format. It dynamically adapts to the structure of the JSON, making it easy to use for a variety of JSON datasets.
-
----
+The JSON-to-CSV Converter is a utility script that converts JSON files into CSV format. It handles nested JSON structures by flattening them using underscore notation, making it particularly useful for processing complex data like gateway weights and settings.
 
 ### Features
 
 - Converts any JSON array of objects to CSV
-- Prompts for the input JSON file location and optionally for the output CSV file name
-- Automatically saves the output CSV file in the `output` directory
-- Dynamically extracts headers from JSON keys—no need to predefine them
+- Automatically flattens nested JSON structures (e.g., `weights_compositeWeight`)
+- Prompts for input/output file locations
+- Automatically saves output to the `output` directory
+- Dynamically extracts all fields, including nested ones
+
+### Usage
+
+1. Run the script:
+```bash
+npm run json-to-csv
+```
+
+2. Follow the prompts:
+   ```plaintext
+   Enter the path to the input JSON file: ./output/gateway-details_1234567890.json
+   Enter the name of the output CSV file (default: gateway-details_1234567890.csv):
+   ```
+
+3. The script will:
+   - Read your JSON file
+   - Flatten any nested structures
+   - Convert to CSV format
+   - Save the result in the `output` directory
+
+### Example Output: JSON-to-CSV Converter
+
+#### Input JSON:
+```json
+[
+    {
+        "gatewayAddress": "QGWqtJdLLgm2ehFWiiPzMaoFLD50CnGuzZIPEdoDRGQ",
+        "fqdn": "ar-io.dev",
+        "status": "joined",
+        "weights": {
+            "compositeWeight": 0.97688888893556,
+            "gatewayRewardRatioWeight": 1,
+            "tenureWeight": 0.19444444444444
+        }
+    }
+]
+```
+
+#### Output CSV:
+```csv
+gatewayAddress,fqdn,status,weights_compositeWeight,weights_gatewayRewardRatioWeight,weights_tenureWeight
+QGWqtJdLLgm2ehFWiiPzMaoFLD50CnGuzZIPEdoDRGQ,ar-io.dev,joined,0.97688888893556,1,0.19444444444444
+```
 
 ---
 
@@ -148,75 +190,6 @@ The script will:
 2. Fetch all gateway records
 3. Process according to your choice
 4. Save results to a timestamped JSON file in the `output` directory
-
----
-
-### Usage: JSON-to-CSV Converter
-
-1. Run the script:
-   ```bash
-   npm run json-to-csv
-   ```
-
-2. Follow the prompts:
-   - **Input JSON File**: Enter the path to your JSON file
-   - **Output CSV File**: Enter the name of the output file or press Enter to use the default name
-
-   Example prompts:
-   ```plaintext
-   Enter the path to the input JSON file: ./example.json
-   Enter the name of the output CSV file (default: example.csv): custom-output.csv
-   ```
-
-3. The output CSV file will be saved in the `output` directory.
-
----
-
-### Example Output: JSON-to-CSV Converter
-
-#### Input JSON (`example.json`):
-```json
-[
-    {
-        "name": "fusionfi",
-        "startTimestamp": 1737688760619,
-        "endTimestamp": 1769224760619,
-        "processId": "T0bTJrxmAIfZwrVtWXl97OlAeRjR-cyzobOq0-A_Jho",
-        "type": "lease",
-        "purchasePrice": 1652121190,
-        "undernameLimit": 10,
-        "owner": "arweave-wallet-address-1"
-    }
-]
-```
-
-#### Output CSV (`output/example.csv`):
-```csv
-name,startTimestamp,endTimestamp,processId,type,purchasePrice,undernameLimit,owner
-fusionfi,1737688760619,1769224760619,T0bTJrxmAIfZwrVtWXl97OlAeRjR-cyzobOq0-A_Jho,lease,1652121190,10,arweave-wallet-address-1
-```
-
----
-
-### Example Output: Gateway Details Fetcher
-
-#### Summary Output Format:
-```json
-{
-  "gatewayAddress": "QGWqtJdLLgm2ehFWiiPzMaoFLD50CnGuzZIPEdoDRGQ",
-  "fqdn": "ar-io.dev",
-  "operatorStake": 250000000000,
-  "status": "joined",
-  "weights": {
-    "compositeWeight": 0.97688888893556,
-    "gatewayRewardRatioWeight": 1,
-    "tenureWeight": 0.19444444444444,
-    "observerRewardRatioWeight": 1,
-    "normalizedCompositeWeight": 0.19247316211083,
-    "stakeWeight": 5.02400000024
-  }
-}
-```
 
 ---
 
