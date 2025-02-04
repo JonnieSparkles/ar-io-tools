@@ -26,7 +26,7 @@ The ArNS Details Fetcher script retrieves data about registered ArNS names, incl
 - **Purchase Price**
 - **Undername Limit**
 
-The script fetches the 10 most recent ArNS records and saves them with complete details.
+The script fetches the most recent ArNS records (based on selected order) and saves them with complete details.
 
 ---
 
