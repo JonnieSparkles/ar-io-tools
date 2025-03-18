@@ -7,6 +7,7 @@ This repository includes:
 1. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
 2. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
 3. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
+4. **Wallet Balance Checker**: A tool to check AR and ARIO token balances for a given wallet address.
 
 ---
 
@@ -215,3 +216,43 @@ This project is dedicated to the public domain under the **Creative Commons Zero
 You are free to copy, modify, distribute, and perform the work, even for commercial purposes, without asking permission.
 
 For more details, see the [LICENSE](LICENSE) file.
+
+---
+
+## Tool: Wallet Balance Checker
+
+### Description
+
+The Wallet Balance Checker script retrieves token balance information for Arweave wallets, including:
+
+- **AR Token Balance**: Native Arweave token balance
+- **ARIO Token Balance**: AR.IO network token balance
+
+The script prompts for a wallet address, fetches current balances, and saves the results to a timestamped JSON file.
+
+---
+
+### Features
+
+- Simple command-line interface to check wallet balances
+- Validate Arweave wallet addresses
+- Fetch current AR token balance from the Arweave network
+- Fetch current ARIO token balance using the AR.IO SDK
+- Save results to a timestamped JSON file in the `output` directory
+- Display formatted balance information in the console
+- Handle network timeouts and errors gracefully
+
+---
+
+### Usage: Wallet Balance Checker
+
+Run the script:
+```bash
+npm run wallet-balance
+```
+
+The script will:
+1. Prompt you to enter an Arweave wallet address
+2. Fetch current AR and ARIO token balances
+3. Display the results in the console
+4. Save the complete data to a timestamped JSON file in the `output` directory

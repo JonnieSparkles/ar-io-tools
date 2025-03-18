@@ -5,8 +5,10 @@
   "main": "arns-details.js",
   "type": "module",
   "scripts": {
-    "start": "node arns-details.js",
-    "json-to-csv": "node json-to-csv.js",
+    "start": "node src/arns-details-fetcher.js",
+    "gateway-details": "node src/gateway-details-fetcher.js",
+    "json-to-csv": "node src/json-to-csv.js",
+    "wallet-balance": "node src/wallet-balance-checker.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -23,7 +25,9 @@
   "author": "",
   "license": "CC0-1.0",
   "dependencies": {
-    "@ar.io/sdk": "^3.2.0",
+    "@ar.io/sdk": "^3.8.4",
+    "@permaweb/aoconnect": "^0.0.77",
+    "arweave": "^1.15.5",
     "json2csv": "^6.0.0-alpha.2"
   }
 }
