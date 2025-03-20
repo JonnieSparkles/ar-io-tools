@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arweave Wallet Balance Checker</title>
+    <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
+    <!-- Import aoconnect as a module -->
+    <script type="module">
+        import { dryrun } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
+        window.aoDryrun = dryrun;  // Make it available globally
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .input-container {
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            display: none;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+        }
+        .help-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .coming-soon {
+            color: #999;
+            font-style: italic;
+        }
+        .totals-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Arweave Wallet Balance Checker</h1>
+    
+    <div class="input-container">
+        <p>Enter wallet addresses (one per line or comma-separated):</p>
+        <textarea id="walletAddresses" placeholder="Enter Arweave wallet addresses (one per line or comma-separated)"></textarea>
+        <div class="help-text">Each address should be 43 characters long. You can enter addresses one per line or separate them with commas.</div>
+        <button id="checkButton">Check Balances</button>
+    </div>
+
+    <div id="loading" class="loading">Checking balances...</div>
+    <div id="error" class="error"></div>
+
+    <table id="results">
+        <thead>
+            <tr>
+                <th>Wallet Address</th>
+                <th>AR Balance</th>
+                <th>ARIO Balance</th>
+                <th>AO Balance</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td>TOTALS</td>
+                <td id="totalAR">-</td>
+                <td id="totalARIO">Coming Soon</td>
+                <td id="totalAO">Coming Soon</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <script>
+        window.addEventListener('load', async function() {
+            if (typeof Arweave === 'undefined') {
+                console.error('Arweave not loaded');
+                document.getElementById('error').textContent = 'Error: Arweave library not loaded';
+                return;
+            }
+
+            // Wait for aoDryrun to be available
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (window.aoDryrun) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+            });
+
+            const arweave = Arweave.init({
+                host: 'arweave.net',
+                port: 443,
+                protocol: 'https'
+            });
+
+            const AO_PROCESS_ID = '0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc';
+            const ARMSTRONG_TO_AO = 1000000000000;
+
+            function parseAddresses(input) {
+                // First split by commas
+                const commaList = input.split(',');
+                
+                // Then split each item by newlines and flatten
+                const addresses = commaList
+                    .flatMap(item => item.split('\n'))
+                    .map(addr => addr.trim())
+                    .filter(addr => addr.length > 0);
+                
+                // Remove duplicates
+                return [...new Set(addresses)];
+            }
+
+            async function checkAOBalance(address) {
+                try {
+                    if (!window.aoDryrun) {
+                        console.log('Checking if aoDryrun exists:', !!window.aoDryrun);
+                        return '0';
+                    }
+
+                    console.log('Sending dryrun request for address:', address);
+                    const response = await window.aoDryrun({
+                        process: AO_PROCESS_ID,
+                        tags: [
+                            { name: 'Action', value: 'Balances' }
+                        ]
+                    });
+                    console.log('AO response:', response);
+
+                    if (response?.Messages?.length > 0) {
+                        const lastMessage = response.Messages[response.Messages.length - 1];
+                        if (lastMessage.Data) {
+                            const balances = typeof lastMessage.Data === 'string' 
+                                ? JSON.parse(lastMessage.Data)
+                                : lastMessage.Data;
+
+                            console.log('Parsed balances:', balances);
+                            console.log('Looking for address:', address);
+
+                            if (balances[address]) {
+                                const rawBalance = balances[address];
+                                const tokenBalance = (parseFloat(rawBalance) / ARMSTRONG_TO_AO).toFixed(6);
+                                console.log(`Found balance: ${rawBalance} armstrongs (${tokenBalance} AO)`);
+                                return tokenBalance;
+                            }
+                        }
+                    }
+                    return '0';
+                } catch (error) {
+                    console.error('Error in checkAOBalance:', error);
+                    return '0';
+                }
+            }
+
+            async function checkBalances() {
+                const addresses = parseAddresses(document.getElementById('walletAddresses').value);
+                const errorDiv = document.getElementById('error');
+                const resultsTable = document.getElementById('results');
+                const loadingDiv = document.getElementById('loading');
+                const button = document.getElementById('checkButton');
+                const resultsBody = document.getElementById('resultsBody');
+
+                // Reset totals and display
+                let totalARWinston = BigInt(0);
+                let totalAO = 0;
+                document.getElementById('totalAR').textContent = '-';
+                document.getElementById('totalAO').textContent = '-';
+                document.getElementById('totalARIO').textContent = 'Coming Soon';
+                resultsBody.innerHTML = '';
+
+                // Validate addresses
+                const invalidAddresses = addresses.filter(addr => !/^[a-zA-Z0-9_-]{43}$/.test(addr));
+                if (invalidAddresses.length > 0) {
+                    errorDiv.textContent = `Invalid addresses found: ${invalidAddresses.join(', ')}`;
+                    return;
+                }
+
+                errorDiv.textContent = '';
+                loadingDiv.style.display = 'block';
+                button.disabled = true;
+                resultsTable.style.display = 'table';
+
+                try {
+                    console.log('Starting balance checks for addresses:', addresses);
+                    
+                    for (const address of addresses) {
+                        const row = document.createElement('tr');
+                        
+                        // Add address cell
+                        const addressCell = document.createElement('td');
+                        addressCell.textContent = address;
+                        row.appendChild(addressCell);
+
+                        // AR Balance
+                        try {
+                            const winstonBalance = await arweave.wallets.getBalance(address);
+                            totalARWinston += BigInt(winstonBalance);
+                            const arBalance = arweave.ar.winstonToAr(winstonBalance);
+                            const balanceCell = document.createElement('td');
+                            balanceCell.textContent = `${arBalance} AR`;
+                            row.appendChild(balanceCell);
+                        } catch (error) {
+                            console.error('Error fetching AR balance:', error);
+                            const errorCell = document.createElement('td');
+                            errorCell.textContent = 'Error';
+                            errorCell.style.color = 'red';
+                            row.appendChild(errorCell);
+                        }
+
+                        // ARIO placeholder
+                        const arioCell = document.createElement('td');
+                        arioCell.textContent = 'Coming Soon';
+                        arioCell.className = 'coming-soon';
+                        row.appendChild(arioCell);
+
+                        // AO Balance
+                        const aoCell = document.createElement('td');
+                        try {
+                            const aoBalance = await checkAOBalance(address);
+                            if (aoBalance && aoBalance !== '0') {
+                                aoCell.textContent = `${aoBalance} AO`;
+                                totalAO += parseFloat(aoBalance);
+                            } else {
+                                aoCell.textContent = '0 AO';
+                            }
+                        } catch (error) {
+                            console.error('Error fetching AO balance:', error);
+                            aoCell.textContent = 'Error';
+                            aoCell.style.color = 'red';
+                        }
+                        row.appendChild(aoCell);
+
+                        resultsBody.appendChild(row);
+                    }
+
+                    // Update totals
+                    const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
+                    document.getElementById('totalAR').textContent = `${totalAR} AR`;
+                    document.getElementById('totalAO').textContent = `${totalAO.toFixed(6)} AO`;
+
+                } catch (error) {
+                    console.error('Error in checkBalances:', error);
+                    errorDiv.textContent = `Error: ${error.message}`;
+                } finally {
+                    loadingDiv.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+
+            // Add click handler
+            document.getElementById('checkButton').addEventListener('click', checkBalances);
+        });
+    </script>
+</body>
+</html> 
