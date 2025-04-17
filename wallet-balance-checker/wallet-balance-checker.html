@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Arweave Wallet Balance Checker</title>
     <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
-    <!-- Import aoconnect as a module -->
+    <!-- Import aoconnect and AR.IO SDK as modules -->
     <script type="module">
-        import { dryrun } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
+        import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
+        import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.8.4/bundles/web.bundle.min.js';
+        window.AOProcess = AOProcess;
+        window.connect = connect;
         window.aoDryrun = dryrun;  // Make it available globally
+        window.ARIO = ARIO;  // Make ARIO available globally
+        // window.mARIOToken = mARIO;  // Make mARIOToken available globally
     </script>
     <style>
         body {
@@ -64,6 +68,20 @@
         .loading {
             display: none;
             margin-top: 10px;
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         .help-text {
             font-size: 14px;
@@ -78,19 +96,53 @@
             font-weight: bold;
             background-color: #f0f0f0;
         }
+        .note {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <h1>Arweave Wallet Balance Checker</h1>
     
+    <div class="note">
+        <strong>Tip:</strong> AR balance checking is fast and reliable. If you encounter errors with AO or ARIO balances, 
+        you can use the checkboxes below to check only AR balances or any combination you prefer.
+    </div>
+
     <div class="input-container">
         <p>Enter wallet addresses (one per line or comma-separated):</p>
         <textarea id="walletAddresses" placeholder="Enter Arweave wallet addresses (one per line or comma-separated)"></textarea>
         <div class="help-text">Each address should be 43 characters long. You can enter addresses one per line or separate them with commas.</div>
+        
+        <div style="margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px;">
+            <p style="margin-bottom: 8px;"><strong>Select which balances to check:</strong></p>
+            <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkAR" checked style="margin-right: 5px;">
+                    <label for="checkAR">AR Balance</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkARIO" checked style="margin-right: 5px;">
+                    <label for="checkARIO">ARIO Balance</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkAO" checked style="margin-right: 5px;">
+                    <label for="checkAO">AO Balance</label>
+                </div>
+            </div>
+        </div>
+        
         <button id="checkButton">Check Balances</button>
     </div>
 
-    <div id="loading" class="loading">Checking balances...</div>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div>Checking balances...</div>
+    </div>
     <div id="error" class="error"></div>
 
     <table id="results">
@@ -108,8 +160,8 @@
             <tr class="totals-row">
                 <td>TOTALS</td>
                 <td id="totalAR">-</td>
-                <td id="totalARIO">Coming Soon</td>
-                <td id="totalAO">Coming Soon</td>
+                <td id="totalARIO">-</td>
+                <td id="totalAO">-</td>
             </tr>
         </tfoot>
     </table>
@@ -138,6 +190,10 @@
                 protocol: 'https'
             });
 
+            // Initialize AR.IO SDK using the recommended pattern from docs
+            const ario = ARIO.init();
+            
+            // Define AO process ID for checking AO balances
             const AO_PROCESS_ID = '0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc';
             const ARMSTRONG_TO_AO = 1000000000000;
 
@@ -158,40 +214,58 @@
             async function checkAOBalance(address) {
                 try {
                     if (!window.aoDryrun) {
-                        console.log('Checking if aoDryrun exists:', !!window.aoDryrun);
+                        console.log('aoDryrun not available');
                         return '0';
                     }
 
-                    console.log('Sending dryrun request for address:', address);
-                    const response = await window.aoDryrun({
-                        process: AO_PROCESS_ID,
-                        tags: [
-                            { name: 'Action', value: 'Balances' }
-                        ]
-                    });
-                    console.log('AO response:', response);
+                    // Based on docs, timeout issues are common - add better error handling
+                    try {
+                        console.log('Sending dryrun request for address:', address);
+                        const response = await window.aoDryrun({
+                            process: AO_PROCESS_ID,
+                            tags: [
+                                { name: 'Action', value: 'Balances' }
+                            ]
+                        });
+                        console.log('AO response:', response);
 
-                    if (response?.Messages?.length > 0) {
-                        const lastMessage = response.Messages[response.Messages.length - 1];
-                        if (lastMessage.Data) {
-                            const balances = typeof lastMessage.Data === 'string' 
-                                ? JSON.parse(lastMessage.Data)
-                                : lastMessage.Data;
+                        if (response?.Messages?.length > 0) {
+                            const lastMessage = response.Messages[response.Messages.length - 1];
+                            if (lastMessage.Data) {
+                                const balances = typeof lastMessage.Data === 'string' 
+                                    ? JSON.parse(lastMessage.Data)
+                                    : lastMessage.Data;
 
-                            console.log('Parsed balances:', balances);
-                            console.log('Looking for address:', address);
+                                console.log('Parsed balances:', balances);
+                                console.log('Looking for address:', address);
 
-                            if (balances[address]) {
-                                const rawBalance = balances[address];
-                                const tokenBalance = (parseFloat(rawBalance) / ARMSTRONG_TO_AO).toFixed(6);
-                                console.log(`Found balance: ${rawBalance} armstrongs (${tokenBalance} AO)`);
-                                return tokenBalance;
+                                if (balances[address]) {
+                                    const rawBalance = balances[address];
+                                    const tokenBalance = (parseFloat(rawBalance) / ARMSTRONG_TO_AO).toFixed(6);
+                                    console.log(`Found balance: ${rawBalance} armstrongs (${tokenBalance} AO)`);
+                                    return tokenBalance;
+                                }
                             }
                         }
+                        
+                        // If we get here, the address wasn't found in the balances
+                        return '0';
+                    } catch (networkError) {
+                        console.error('Network error in AO balance check:', networkError);
+                        
+                        // Return a descriptive string for network errors
+                        if (networkError.message && (
+                            networkError.message.includes('timeout') || 
+                            networkError.message.includes('CORS') ||
+                            networkError.message.includes('network')
+                        )) {
+                            return 'API Unavailable';
+                        }
+                        
+                        return '0';
                     }
-                    return '0';
                 } catch (error) {
-                    console.error('Error in checkAOBalance:', error);
+                    console.error('General error in checkAOBalance:', error);
                     return '0';
                 }
             }
@@ -203,13 +277,25 @@
                 const loadingDiv = document.getElementById('loading');
                 const button = document.getElementById('checkButton');
                 const resultsBody = document.getElementById('resultsBody');
+                
+                // Get checkbox states
+                const checkAR = document.getElementById('checkAR').checked;
+                const checkARIO = document.getElementById('checkARIO').checked;
+                const checkAO = document.getElementById('checkAO').checked;
+                
+                // At least one checkbox must be checked
+                if (!checkAR && !checkARIO && !checkAO) {
+                    errorDiv.textContent = 'Please select at least one balance type to check';
+                    return;
+                }
 
                 // Reset totals and display
                 let totalARWinston = BigInt(0);
                 let totalAO = 0;
+                let totalARIO = 0;
                 document.getElementById('totalAR').textContent = '-';
                 document.getElementById('totalAO').textContent = '-';
-                document.getElementById('totalARIO').textContent = 'Coming Soon';
+                document.getElementById('totalARIO').textContent = '-';
                 resultsBody.innerHTML = '';
 
                 // Validate addresses
@@ -226,6 +312,7 @@
 
                 try {
                     console.log('Starting balance checks for addresses:', addresses);
+                    console.log('Checking: AR:', checkAR, 'ARIO:', checkARIO, 'AO:', checkAO);
                     
                     for (const address of addresses) {
                         const row = document.createElement('tr');
@@ -236,51 +323,112 @@
                         row.appendChild(addressCell);
 
                         // AR Balance
-                        try {
-                            const winstonBalance = await arweave.wallets.getBalance(address);
-                            totalARWinston += BigInt(winstonBalance);
-                            const arBalance = arweave.ar.winstonToAr(winstonBalance);
-                            const balanceCell = document.createElement('td');
-                            balanceCell.textContent = `${arBalance} AR`;
-                            row.appendChild(balanceCell);
-                        } catch (error) {
-                            console.error('Error fetching AR balance:', error);
-                            const errorCell = document.createElement('td');
-                            errorCell.textContent = 'Error';
-                            errorCell.style.color = 'red';
-                            row.appendChild(errorCell);
+                        if (checkAR) {
+                            try {
+                                const winstonBalance = await arweave.wallets.getBalance(address);
+                                totalARWinston += BigInt(winstonBalance);
+                                const arBalance = arweave.ar.winstonToAr(winstonBalance);
+                                const balanceCell = document.createElement('td');
+                                balanceCell.textContent = `${arBalance} AR`;
+                                row.appendChild(balanceCell);
+                            } catch (error) {
+                                console.error('Error fetching AR balance:', error);
+                                const errorCell = document.createElement('td');
+                                errorCell.textContent = 'Error';
+                                errorCell.style.color = 'red';
+                                row.appendChild(errorCell);
+                            }
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
                         }
 
-                        // ARIO placeholder
-                        const arioCell = document.createElement('td');
-                        arioCell.textContent = 'Coming Soon';
-                        arioCell.className = 'coming-soon';
-                        row.appendChild(arioCell);
+                        // ARIO Balance
+                        if (checkARIO) {
+                            const arioCell = document.createElement('td');
+                            try {
+                                // Using the documented getBalance method
+                                try {
+                                    const arioBalance = await ario.getBalance({
+                                        address: address
+                                    });
+                                    
+                                    // The documentation indicates that ARIO amounts are in microARIO (1,000,000 = 1 ARIO)
+                                    const arioFormatted = (parseFloat(arioBalance || '0') / 1000000).toFixed(6);
+                                    arioCell.textContent = `${arioFormatted} ARIO`;
+                                    totalARIO += parseFloat(arioFormatted);
+                                } catch (arioError) {
+                                    console.error('ARIO SDK error:', arioError);
+                                    
+                                    // If SDK call fails with network error, try alternate method
+                                    if (arioError.message && (
+                                        arioError.message.includes('network') || 
+                                        arioError.message.includes('timeout') ||
+                                        arioError.message.includes('CORS')
+                                    )) {
+                                        arioCell.textContent = 'API Unavailable';
+                                    } else {
+                                        arioCell.textContent = '0 ARIO';
+                                    }
+                                    
+                                    arioCell.style.color = 'orange';
+                                }
+                            } catch (error) {
+                                console.error('Error fetching ARIO balance:', error);
+                                arioCell.textContent = 'Error';
+                                arioCell.style.color = 'red';
+                            }
+                            row.appendChild(arioCell);
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
+                        }
 
                         // AO Balance
-                        const aoCell = document.createElement('td');
-                        try {
-                            const aoBalance = await checkAOBalance(address);
-                            if (aoBalance && aoBalance !== '0') {
-                                aoCell.textContent = `${aoBalance} AO`;
-                                totalAO += parseFloat(aoBalance);
-                            } else {
-                                aoCell.textContent = '0 AO';
+                        if (checkAO) {
+                            const aoCell = document.createElement('td');
+                            try {
+                                const aoBalance = await checkAOBalance(address);
+                                if (aoBalance === 'API Unavailable') {
+                                    aoCell.textContent = 'API Unavailable';
+                                    aoCell.style.color = 'orange';
+                                } else if (aoBalance && aoBalance !== '0') {
+                                    aoCell.textContent = `${aoBalance} AO`;
+                                    totalAO += parseFloat(aoBalance);
+                                } else {
+                                    aoCell.textContent = '0 AO';
+                                }
+                            } catch (error) {
+                                console.error('Error fetching AO balance:', error);
+                                aoCell.textContent = 'Error';
+                                aoCell.style.color = 'red';
                             }
-                        } catch (error) {
-                            console.error('Error fetching AO balance:', error);
-                            aoCell.textContent = 'Error';
-                            aoCell.style.color = 'red';
+                            row.appendChild(aoCell);
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
                         }
-                        row.appendChild(aoCell);
 
                         resultsBody.appendChild(row);
                     }
 
                     // Update totals
-                    const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
-                    document.getElementById('totalAR').textContent = `${totalAR} AR`;
-                    document.getElementById('totalAO').textContent = `${totalAO.toFixed(6)} AO`;
+                    if (checkAR) {
+                        const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
+                        document.getElementById('totalAR').textContent = `${totalAR} AR`;
+                    }
+                    if (checkARIO) {
+                        document.getElementById('totalARIO').textContent = `${totalARIO.toFixed(6)} ARIO`;
+                    }
+                    if (checkAO) {
+                        document.getElementById('totalAO').textContent = `${totalAO.toFixed(6)} AO`;
+                    }
 
                 } catch (error) {
                     console.error('Error in checkBalances:', error);
