@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Solana to Arweave Normalized Address</title>
+</head>
+<body>
+  <h2>Solana to Arweave Normalized Address</h2>
+  <input type="text" id="solanaAddress" placeholder="Enter Solana address" size="60">
+  <button onclick="convert()">Convert</button>
+  <p><strong>Normalized Address:</strong></p>
+  <p id="result" style="word-break: break-all;"></p>
+
+  <script>
+    // Base58 decoding using standard alphabet
+    const base58Alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    function base58Decode(input) {
+      const bytes = [0];
+      for (let i = 0; i < input.length; i++) {
+        const char = input[i];
+        const value = base58Alphabet.indexOf(char);
+        if (value === -1) throw new Error("Invalid base58 character");
+
+        for (let j = 0; j < bytes.length; j++) bytes[j] *= 58;
+        bytes[0] += value;
+
+        for (let j = 0; j < bytes.length; ++j) {
+          if (bytes[j] > 255) {
+            if (bytes[j + 1] === undefined) bytes[j + 1] = 0;
+            bytes[j + 1] += (bytes[j] / 256) | 0;
+            bytes[j] %= 256;
+          }
+        }
+      }
+
+      // Handle leading zeros
+      for (let k = 0; k < input.length && input[k] === '1'; k++) {
+        bytes.push(0);
+      }
+
+      return new Uint8Array(bytes.reverse());
+    }
+
+    function base64urlEncode(buffer) {
+      return btoa(String.fromCharCode.apply(null, buffer))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    async function convert() {
+      const addr = document.getElementById('solanaAddress').value.trim();
+      try {
+        const pubkeyBytes = base58Decode(addr);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", pubkeyBytes);
+        const normalizedAddress = base64urlEncode(new Uint8Array(hashBuffer));
+        document.getElementById('result').textContent = normalizedAddress;
+      } catch (e) {
+        document.getElementById('result').textContent = "Error: " + e.message;
+      }
+    }
+  </script>
+</body>
+</html>
