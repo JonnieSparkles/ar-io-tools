@@ -154,7 +154,7 @@ The Solana to Arweave Address Normalizer is a web-based tool that converts Solan
 
 ### Usage
 
-1. Open `normalize.html` in a web browser
+1. Open `normalize-it.html` in a web browser
 2. Enter a Solana address in the input field
 3. Click "Convert" to get the normalized Arweave address
 4. The result will be displayed below with word-break enabled for long addresses
