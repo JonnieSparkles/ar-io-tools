@@ -138,6 +138,37 @@ QGWqtJdLLgm2ehFWiiPzMaoFLD50CnGuzZIPEdoDRGQ,ar-io.dev,joined,0.97688888893556,1,
 
 ---
 
+## Tool: Solana to Arweave Address Normalizer
+
+### Description
+
+The Solana to Arweave Address Normalizer is a web-based tool that converts Solana addresses to their normalized Arweave format. This is useful for cross-chain operations and when working with addresses that need to be compatible with both Solana and Arweave networks.
+
+### Features
+
+- Converts Solana base58 addresses to Arweave-compatible base64url format
+- Uses SHA-256 hashing for address normalization
+- Simple web interface for easy conversion
+- Handles error cases and invalid inputs
+- No server-side processing required - runs entirely in the browser
+
+### Usage
+
+1. Open `normalize.html` in a web browser
+2. Enter a Solana address in the input field
+3. Click "Convert" to get the normalized Arweave address
+4. The result will be displayed below with word-break enabled for long addresses
+
+### Technical Details
+
+The tool performs the following steps:
+1. Decodes the Solana address from base58 format
+2. Applies SHA-256 hashing to the decoded bytes
+3. Encodes the result in base64url format
+4. Handles leading zeros and edge cases appropriately
+
+---
+
 ### Requirements
 
 - **Node.js**: Version 18 or higher
