@@ -6,20 +6,21 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="normalize-it_jonniesparkles.ar.io">
-  <meta property="og:title" content="Solana to Arweave Address Normalizer">
-  <meta property="og:description" content="Convert Solana addresses to their normalized Arweave format. Simple, fast, and runs entirely in your browser.">
+  <meta property="og:title" content="Solana/EVM to Arweave Address Normalizer">
+  <meta property="og:description" content="Convert Solana/EVM addresses to their normalized Arweave format. Simple, fast, and runs entirely in your browser.">
   <!-- Twitter -->
   <meta property="twitter:card" content="summary">
   <meta property="twitter:url" content="normalize-it_jonniesparkles.ar.io">
-  <meta property="twitter:title" content="Solana to Arweave Address Normalizer">
-  <meta property="twitter:description" content="Convert Solana addresses to their normalized Arweave format. Simple, fast, and runs entirely in your browser.">
+  <meta property="twitter:title" content="Solana/EVM to Arweave Address Normalizer">
+  <meta property="twitter:description" content="Convert Solana/EVM addresses to their normalized Arweave format. Simple, fast, and runs entirely in your browser.">
 </head>
 <body>
-  <h2>Solana to Arweave Normalized Address</h2>
-  <input type="text" id="solanaAddress" placeholder="Enter Solana address" size="60">
+  <h2>Solana / EVM to Arweave Normalized Address</h2>
+  <input type="text" id="solanaAddress" placeholder="Enter Solana or EVM 0x address" size="60">
   <button onclick="convert()">Convert</button>
   <p><strong>Normalized Address:</strong></p>
   <p id="result" style="word-break: break-all;"></p>
+  <button id="copyBtn" onclick="copyResult()">Copy</button>
 
   <script>
     // Base58 decoding using standard alphabet
@@ -58,16 +59,42 @@
         .replace(/=+$/, '');
     }
 
+    // Decode hex strings for EVM 0x addresses
+    function hexToBytes(hex) {
+      if (hex.length % 2 !== 0) throw new Error("Invalid hex string");
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+      }
+      return bytes;
+    }
+
     async function convert() {
       const addr = document.getElementById('solanaAddress').value.trim();
       try {
-        const pubkeyBytes = base58Decode(addr);
+        let pubkeyBytes;
+        if (/^0x[0-9a-fA-F]+$/.test(addr)) {
+          pubkeyBytes = hexToBytes(addr.slice(2));
+        } else {
+          pubkeyBytes = base58Decode(addr);
+        }
         const hashBuffer = await crypto.subtle.digest("SHA-256", pubkeyBytes);
         const normalizedAddress = base64urlEncode(new Uint8Array(hashBuffer));
         document.getElementById('result').textContent = normalizedAddress;
       } catch (e) {
         document.getElementById('result').textContent = "Error: " + e.message;
       }
+    }
+
+    // Copy the normalized address to clipboard
+    function copyResult() {
+      const text = document.getElementById('result').textContent;
+      if (!text) return;
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          alert('Copied to clipboard!');
+        })
+        .catch(err => console.error('Failed to copy text: ', err));
     }
   </script>
 </body>
