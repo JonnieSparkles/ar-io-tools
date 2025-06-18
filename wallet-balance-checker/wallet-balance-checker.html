@@ -8,7 +8,7 @@
     <!-- Import aoconnect and AR.IO SDK as modules -->
     <script type="module">
         import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
-        import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.8.4/bundles/web.bundle.min.js';
+        import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.13.0/bundles/web.bundle.min.js';
         window.AOProcess = AOProcess;
         window.connect = connect;
         window.aoDryrun = dryrun;  // Make it available globally
@@ -191,7 +191,7 @@
             });
 
             // Initialize AR.IO SDK using the recommended pattern from docs
-            const ario = ARIO.init();
+            const ario = ARIO.mainnet();
             
             // Define AO process ID for checking AO balances
             const AO_PROCESS_ID = '0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc';
@@ -443,5 +443,11 @@
             document.getElementById('checkButton').addEventListener('click', checkBalances);
         });
     </script>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <div style="font-size: 12px; color: #666;">
+            v0.0.1
+        </div>
+    </div>
 </body>
 </html> 
