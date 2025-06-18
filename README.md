@@ -219,40 +219,52 @@ For more details, see the [LICENSE](LICENSE) file.
 
 ---
 
-## Tool: Wallet Balance Checker
+## Tool: Wallet Balance Checker (Web App)
 
 ### Description
 
-The Wallet Balance Checker script retrieves token balance information for Arweave wallets, including:
+The Wallet Balance Checker is now a web-based tool (`wallet-balance-checker/wallet-balance-checker.html`) that allows you to check balances for multiple wallet addresses at once, including:
 
 - **AR Token Balance**: Native Arweave token balance
 - **ARIO Token Balance**: AR.IO network token balance
+- **AO Token Balance**: AO Computer token balance
 
-The script prompts for a wallet address, fetches current balances, and saves the results to a timestamped JSON file.
+You can enter Arweave addresses or Ethereum (0x...) addresses. ETH addresses will show "N/A" for AR, but can hold ARIO and AO balances.
 
 ---
 
 ### Features
 
-- Simple command-line interface to check wallet balances
-- Validate Arweave wallet addresses
-- Fetch current AR token balance from the Arweave network
-- Fetch current ARIO token balance using the AR.IO SDK
-- Save results to a timestamped JSON file in the `output` directory
-- Display formatted balance information in the console
-- Handle network timeouts and errors gracefully
+- User-friendly web interface (no CLI required)
+- Check balances for multiple addresses at once (comma or newline separated)
+- Supports Arweave and Ethereum (0x...) addresses
+- Fetches AR, ARIO, and AO balances (selectable)
+- Displays totals and live USD conversion (using CoinGecko)
+- Shows current token prices for reference
+- Export results to CSV (with timestamped filename)
+- Handles network errors and unavailable APIs gracefully
 
 ---
 
-### Usage: Wallet Balance Checker
+### Usage: Wallet Balance Checker Web App
 
-Run the script:
-```bash
-npm run wallet-balance
-```
+1. Open `wallet-balance-checker/wallet-balance-checker.html` in your web browser.
+   - For best results, serve the file over HTTP (e.g., with `python -m http.server` or `npx serve .`) and visit `http://localhost:8000/wallet-balance-checker/wallet-balance-checker.html`.
+2. Paste or type wallet addresses (one per line or comma-separated).
+3. Select which balances to check (AR, ARIO, AO).
+4. Click **Check Balances**.
+5. View results, totals, and USD values. Export to CSV if desired.
 
-The script will:
-1. Prompt you to enter an Arweave wallet address
-2. Fetch current AR and ARIO token balances
-3. Display the results in the console
-4. Save the complete data to a timestamped JSON file in the `output` directory
+---
+
+#### Example Output
+
+| Wallet Address | AR Balance | ARIO Balance | AO Balance |
+|---------------|------------|--------------|------------|
+| ...           | ...        | ...          | ...        |
+
+Totals and USD values are shown below the table, along with current token prices.
+
+---
+
+**Note:** The old CLI script (`wallet-balance-checker.js`) has been removed. All balance checking is now done via the HTML web app.
