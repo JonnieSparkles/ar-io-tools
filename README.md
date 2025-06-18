@@ -7,6 +7,7 @@ This repository includes:
 1. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
 2. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
 3. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
+4. **Wallet Balance Checker**: A tool to check AR and ARIO token balances for a given wallet address.
 
 ---
 
@@ -246,3 +247,55 @@ This project is dedicated to the public domain under the **Creative Commons Zero
 You are free to copy, modify, distribute, and perform the work, even for commercial purposes, without asking permission.
 
 For more details, see the [LICENSE](LICENSE) file.
+
+---
+
+## Tool: Wallet Balance Checker (Web App)
+
+### Description
+
+The Wallet Balance Checker is now a web-based tool (`wallet-balance-checker/wallet-balance-checker.html`) that allows you to check balances for multiple wallet addresses at once, including:
+
+- **AR Token Balance**: Native Arweave token balance
+- **ARIO Token Balance**: AR.IO network token balance
+- **AO Token Balance**: AO Computer token balance
+
+You can enter Arweave addresses or Ethereum (0x...) addresses. ETH addresses will show "N/A" for AR, but can hold ARIO and AO balances.
+
+---
+
+### Features
+
+- User-friendly web interface (no CLI required)
+- Check balances for multiple addresses at once (comma or newline separated)
+- Supports Arweave and Ethereum (0x...) addresses
+- Fetches AR, ARIO, and AO balances (selectable)
+- Displays totals and live USD conversion (using CoinGecko)
+- Shows current token prices for reference
+- Export results to CSV (with timestamped filename)
+- Handles network errors and unavailable APIs gracefully
+
+---
+
+### Usage: Wallet Balance Checker Web App
+
+1. Open `wallet-balance-checker/wallet-balance-checker.html` in your web browser.
+   - For best results, serve the file over HTTP (e.g., with `python -m http.server` or `npx serve .`) and visit `http://localhost:8000/wallet-balance-checker/wallet-balance-checker.html`.
+2. Paste or type wallet addresses (one per line or comma-separated).
+3. Select which balances to check (AR, ARIO, AO).
+4. Click **Check Balances**.
+5. View results, totals, and USD values. Export to CSV if desired.
+
+---
+
+#### Example Output
+
+| Wallet Address | AR Balance | ARIO Balance | AO Balance |
+|---------------|------------|--------------|------------|
+| ...           | ...        | ...          | ...        |
+
+Totals and USD values are shown below the table, along with current token prices.
+
+---
+
+**Note:** The old CLI script (`wallet-balance-checker.js`) has been removed. All balance checking is now done via the HTML web app.

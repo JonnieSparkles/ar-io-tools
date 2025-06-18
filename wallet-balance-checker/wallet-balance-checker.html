@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR.IO Wallet Balance Checker</title>
+    <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
+    <!-- Import aoconnect and AR.IO SDK as modules -->
+    <script type="module">
+        import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
+        import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.13.0/bundles/web.bundle.min.js';
+        window.AOProcess = AOProcess;
+        window.connect = connect;
+        window.aoDryrun = dryrun;  // Make it available globally
+        window.ARIO = ARIO;  // Make ARIO available globally
+        // window.mARIOToken = mARIO;  // Make mARIOToken available globally
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .input-container {
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            display: none;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            position: sticky;
+            top: 0;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .help-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .coming-soon {
+            color: #999;
+            font-style: italic;
+        }
+        .totals-row {
+            font-weight: bold;
+            background-color: #f0f0f0;
+        }
+        .note {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AR.IO Wallet Balance Checker</h1>
+    
+    <div class="note">
+        <strong>Tip:</strong> AR balance checking is fast and reliable. If you encounter errors with AO or ARIO balances, 
+        you can use the checkboxes below to check only AR balances or any combination you prefer.
+    </div>
+
+    <div class="input-container">
+        <p>Enter wallet addresses (one per line or comma-separated):</p>
+        <textarea id="walletAddresses" placeholder="Enter wallet addresses (one per line or comma-separated)"></textarea>
+        <div class="help-text"><strong>Note:</strong> Only unlocked token balances will be displayed - staked and withdrawn tokens will not be shown.</div>
+        
+        <div style="margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px;">
+            <p style="margin-bottom: 8px;"><strong>Select which balances to check:</strong></p>
+            <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkAR" checked style="margin-right: 5px;">
+                    <label for="checkAR">AR Balance</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkARIO" checked style="margin-right: 5px;">
+                    <label for="checkARIO">ARIO Balance</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="checkAO" checked style="margin-right: 5px;">
+                    <label for="checkAO">AO Balance</label>
+                </div>
+            </div>
+        </div>
+        <div id="tokenPrices" style="margin: 10px 0 18px 0; font-size: 14px; color: #444;">
+            <strong>Current Prices:</strong>
+            <span id="priceAR">AR: ...</span> |
+            <span id="priceARIO">ARIO: ...</span> |
+            <span id="priceAO">AO: ...</span>
+        </div>
+        
+        <button id="checkButton">Check Balances</button>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <div>Checking balances...</div>
+    </div>
+    <div id="error" class="error"></div>
+
+    <table id="results">
+        <thead>
+            <tr>
+                <th>Wallet Address</th>
+                <th>AR Balance</th>
+                <th>ARIO Balance</th>
+                <th>AO Balance</th>
+            </tr>
+        </thead>
+        <tbody id="resultsBody">
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td>TOTALS</td>
+                <td id="totalAR">-</td>
+                <td id="totalARIO">-</td>
+                <td id="totalAO">-</td>
+            </tr>
+            <tr class="totals-row">
+                <td>Total Value (USD)</td>
+                <td id="usdAR">-</td>
+                <td id="usdARIO">-</td>
+                <td id="usdAO">-</td>
+            </tr>
+            <tr>
+                <td colspan="4" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
+                    Grand Total (USD): <span id="usdGrandTotal"></span>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+    <div style="text-align:right; max-width:1000px; margin: 10px auto 0 auto;">
+        <button id="exportCSVButton" style="display:none; margin-top:8px;">Export to CSV</button>
+    </div>
+
+    <script>
+        window.addEventListener('load', async function() {
+            if (typeof Arweave === 'undefined') {
+                console.error('Arweave not loaded');
+                document.getElementById('error').textContent = 'Error: Arweave library not loaded';
+                return;
+            }
+
+            // Wait for aoDryrun to be available
+            await new Promise(resolve => {
+                const check = setInterval(() => {
+                    if (window.aoDryrun) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 100);
+            });
+
+            const arweave = Arweave.init({
+                host: 'arweave.net',
+                port: 443,
+                protocol: 'https'
+            });
+
+            // Initialize AR.IO SDK using the recommended pattern from docs
+            const ario = ARIO.mainnet();
+            
+            // Define AO process ID for checking AO balances
+            const AO_PROCESS_ID = '0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc';
+            const ARMSTRONG_TO_AO = 1000000000000;
+
+            function parseAddresses(input) {
+                // First split by commas
+                const commaList = input.split(',');
+                
+                // Then split each item by newlines and flatten
+                const addresses = commaList
+                    .flatMap(item => item.split('\n'))
+                    .map(addr => addr.trim())
+                    .filter(addr => addr.length > 0);
+                
+                // Remove duplicates
+                return [...new Set(addresses)];
+            }
+
+            async function checkAOBalance(address) {
+                try {
+                    if (!window.aoDryrun) {
+                        console.log('aoDryrun not available');
+                        return '0';
+                    }
+
+                    // Based on docs, timeout issues are common - add better error handling
+                    try {
+                        console.log('Sending dryrun request for address:', address);
+                        const response = await window.aoDryrun({
+                            process: AO_PROCESS_ID,
+                            tags: [
+                                { name: 'Action', value: 'Balances' }
+                            ]
+                        });
+                        console.log('AO response:', response);
+
+                        if (response?.Messages?.length > 0) {
+                            const lastMessage = response.Messages[response.Messages.length - 1];
+                            if (lastMessage.Data) {
+                                const balances = typeof lastMessage.Data === 'string' 
+                                    ? JSON.parse(lastMessage.Data)
+                                    : lastMessage.Data;
+
+                                console.log('Parsed balances:', balances);
+                                console.log('Looking for address:', address);
+
+                                if (balances[address]) {
+                                    const rawBalance = balances[address];
+                                    const tokenBalance = (parseFloat(rawBalance) / ARMSTRONG_TO_AO).toFixed(6);
+                                    console.log(`Found balance: ${rawBalance} armstrongs (${tokenBalance} AO)`);
+                                    return tokenBalance;
+                                }
+                            }
+                        }
+                        
+                        // If we get here, the address wasn't found in the balances
+                        return '0';
+                    } catch (networkError) {
+                        console.error('Network error in AO balance check:', networkError);
+                        
+                        // Return a descriptive string for network errors
+                        if (networkError.message && (
+                            networkError.message.includes('timeout') || 
+                            networkError.message.includes('CORS') ||
+                            networkError.message.includes('network')
+                        )) {
+                            return 'API Unavailable';
+                        }
+                        
+                        return '0';
+                    }
+                } catch (error) {
+                    console.error('General error in checkAOBalance:', error);
+                    return '0';
+                }
+            }
+
+            // Helper to format numbers with commas and fixed decimals
+            function formatWithCommas(num, decimals = 6) {
+                if (isNaN(num)) return num;
+                const parts = Number(num).toFixed(decimals).split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return decimals > 0 ? parts.join('.') : parts[0];
+            }
+
+            async function checkBalances() {
+                const addresses = parseAddresses(document.getElementById('walletAddresses').value);
+                const errorDiv = document.getElementById('error');
+                const resultsTable = document.getElementById('results');
+                const loadingDiv = document.getElementById('loading');
+                const button = document.getElementById('checkButton');
+                const resultsBody = document.getElementById('resultsBody');
+                
+                // Get checkbox states
+                const checkAR = document.getElementById('checkAR').checked;
+                const checkARIO = document.getElementById('checkARIO').checked;
+                const checkAO = document.getElementById('checkAO').checked;
+                
+                // At least one checkbox must be checked
+                if (!checkAR && !checkARIO && !checkAO) {
+                    errorDiv.textContent = 'Please select at least one balance type to check';
+                    return;
+                }
+
+                // Reset totals and display
+                let totalARWinston = BigInt(0);
+                let totalAO = 0;
+                let totalARIO = 0;
+                document.getElementById('totalAR').textContent = '-';
+                document.getElementById('totalAO').textContent = '-';
+                document.getElementById('totalARIO').textContent = '-';
+                document.getElementById('usdAR').textContent = '-';
+                document.getElementById('usdARIO').textContent = '-';
+                document.getElementById('usdAO').textContent = '-';
+                document.getElementById('usdGrandTotal').textContent = '';
+                resultsBody.innerHTML = '';
+
+                // Show loading for token prices
+                document.getElementById('priceAR').textContent = 'AR: ...';
+                document.getElementById('priceARIO').textContent = 'ARIO: ...';
+                document.getElementById('priceAO').textContent = 'AO: ...';
+
+                // Validate addresses
+                const invalidAddresses = addresses.filter(addr => !(/^[a-zA-Z0-9_-]{43}$/.test(addr) || /^0x[a-fA-F0-9]{40}$/.test(addr)));
+                if (invalidAddresses.length > 0) {
+                    errorDiv.textContent = `Invalid addresses found: ${invalidAddresses.join(', ')}`;
+                    return;
+                }
+
+                errorDiv.textContent = '';
+                loadingDiv.style.display = 'block';
+                button.disabled = true;
+                resultsTable.style.display = 'table';
+
+                try {
+                    console.log('Starting balance checks for addresses:', addresses);
+                    console.log('Checking: AR:', checkAR, 'ARIO:', checkARIO, 'AO:', checkAO);
+                    
+                    for (const address of addresses) {
+                        const row = document.createElement('tr');
+                        
+                        // Add address cell
+                        const addressCell = document.createElement('td');
+                        addressCell.textContent = address;
+                        row.appendChild(addressCell);
+
+                        // AR Balance
+                        if (checkAR) {
+                            const ethRegex = /^0x[a-fA-F0-9]{40}$/;
+                            if (ethRegex.test(address)) {
+                                const naCell = document.createElement('td');
+                                naCell.textContent = 'NA';
+                                naCell.style.color = '#999';
+                                row.appendChild(naCell);
+                            } else {
+                                try {
+                                    const winstonBalance = await arweave.wallets.getBalance(address);
+                                    totalARWinston += BigInt(winstonBalance);
+                                    const arBalance = arweave.ar.winstonToAr(winstonBalance);
+                                    const balanceCell = document.createElement('td');
+                                    balanceCell.textContent = `${formatWithCommas(arBalance)} AR`;
+                                    row.appendChild(balanceCell);
+                                } catch (error) {
+                                    console.error('Error fetching AR balance:', error);
+                                    const errorCell = document.createElement('td');
+                                    errorCell.textContent = 'Error';
+                                    errorCell.style.color = 'red';
+                                    row.appendChild(errorCell);
+                                }
+                            }
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
+                        }
+
+                        // ARIO Balance
+                        if (checkARIO) {
+                            const arioCell = document.createElement('td');
+                            try {
+                                // Using the documented getBalance method
+                                try {
+                                    const arioBalance = await ario.getBalance({
+                                        address: address
+                                    });
+                                    // The documentation indicates that ARIO amounts are in microARIO (1,000,000 = 1 ARIO)
+                                    const arioFormatted = (parseFloat(arioBalance || '0') / 1000000);
+                                    arioCell.textContent = `${formatWithCommas(arioFormatted)} ARIO`;
+                                    totalARIO += parseFloat(arioFormatted);
+                                } catch (arioError) {
+                                    console.error('ARIO SDK error:', arioError);
+                                    // If SDK call fails with network error, try alternate method
+                                    if (arioError.message && (
+                                        arioError.message.includes('network') || 
+                                        arioError.message.includes('timeout') ||
+                                        arioError.message.includes('CORS')
+                                    )) {
+                                        arioCell.textContent = 'API Unavailable';
+                                    } else {
+                                        arioCell.textContent = '0 ARIO';
+                                    }
+                                    arioCell.style.color = 'orange';
+                                }
+                            } catch (error) {
+                                console.error('Error fetching ARIO balance:', error);
+                                arioCell.textContent = 'Error';
+                                arioCell.style.color = 'red';
+                            }
+                            row.appendChild(arioCell);
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
+                        }
+
+                        // AO Balance
+                        if (checkAO) {
+                            const aoCell = document.createElement('td');
+                            try {
+                                const aoBalance = await checkAOBalance(address);
+                                if (aoBalance === 'API Unavailable') {
+                                    aoCell.textContent = 'API Unavailable';
+                                    aoCell.style.color = 'orange';
+                                } else if (aoBalance && aoBalance !== '0') {
+                                    aoCell.textContent = `${formatWithCommas(aoBalance)} AO`;
+                                    totalAO += parseFloat(aoBalance);
+                                } else {
+                                    aoCell.textContent = '0 AO';
+                                }
+                            } catch (error) {
+                                console.error('Error fetching AO balance:', error);
+                                aoCell.textContent = 'Error';
+                                aoCell.style.color = 'red';
+                            }
+                            row.appendChild(aoCell);
+                        } else {
+                            const skipCell = document.createElement('td');
+                            skipCell.textContent = 'Skipped';
+                            skipCell.style.color = '#999';
+                            row.appendChild(skipCell);
+                        }
+
+                        resultsBody.appendChild(row);
+                    }
+
+                    // Update totals
+                    if (checkAR) {
+                        const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
+                        document.getElementById('totalAR').textContent = `${formatWithCommas(totalAR)} AR`;
+                        window._totalAR = parseFloat(totalAR); // for USD calc
+                    }
+                    if (checkARIO) {
+                        document.getElementById('totalARIO').textContent = `${formatWithCommas(totalARIO)} ARIO`;
+                        window._totalARIO = totalARIO; // for USD calc
+                    }
+                    if (checkAO) {
+                        document.getElementById('totalAO').textContent = `${formatWithCommas(totalAO)} AO`;
+                        window._totalAO = totalAO; // for USD calc
+                    }
+
+                    // Fetch USD prices and update USD row
+                    const lastPrices = await updateUSDRow({
+                        ar: window._totalAR || 0,
+                        ario: window._totalARIO || 0,
+                        ao: window._totalAO || 0,
+                        checkAR,
+                        checkARIO,
+                        checkAO
+                    });
+
+                    // Update token price display
+                    if (lastPrices) {
+                        document.getElementById('priceAR').textContent = 'AR: ' + (lastPrices.ar !== undefined ? lastPrices.ar : 'N/A');
+                        document.getElementById('priceARIO').textContent = 'ARIO: ' + (lastPrices.ario !== undefined ? lastPrices.ario : 'N/A');
+                        document.getElementById('priceAO').textContent = 'AO: ' + (lastPrices.ao !== undefined ? lastPrices.ao : 'N/A');
+                    }
+
+                } catch (error) {
+                    console.error('Error in checkBalances:', error);
+                    errorDiv.textContent = `Error: ${error.message}`;
+                } finally {
+                    loadingDiv.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+
+            // Fetch prices from CoinGecko and update USD row
+            async function updateUSDRow({ ar, ario, ao, checkAR, checkARIO, checkAO }) {
+                // CoinGecko IDs
+                const ids = [];
+                if (checkAR) ids.push('arweave');
+                if (checkARIO) ids.push('ar-io-network');
+                if (checkAO) ids.push('ao-computer');
+                let prices = {};
+                try {
+                    if (ids.length > 0) {
+                        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
+                        const resp = await fetch(url);
+                        prices = await resp.json();
+                    }
+                } catch (e) {
+                    // fallback: all N/A
+                    prices = {};
+                }
+                let usdAR = '-';
+                let usdARIO = '-';
+                let usdAO = '-';
+                let grandTotal = 0;
+                // For returning prices for display
+                let priceDisplay = { ar: undefined, ario: undefined, ao: undefined };
+                if (checkAR && prices['arweave'] && prices['arweave'].usd) {
+                    usdAR = (ar * prices['arweave'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ar * prices['arweave'].usd;
+                    priceDisplay.ar = prices['arweave'].usd ? `$${prices['arweave'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkAR) {
+                    usdAR = 'N/A';
+                    priceDisplay.ar = 'N/A';
+                }
+                if (checkARIO && prices['ar-io-network'] && prices['ar-io-network'].usd) {
+                    usdARIO = (ario * prices['ar-io-network'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ario * prices['ar-io-network'].usd;
+                    priceDisplay.ario = prices['ar-io-network'].usd ? `$${prices['ar-io-network'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkARIO) {
+                    usdARIO = 'N/A';
+                    priceDisplay.ario = 'N/A';
+                }
+                if (checkAO && prices['ao-computer'] && prices['ao-computer'].usd) {
+                    usdAO = (ao * prices['ao-computer'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ao * prices['ao-computer'].usd;
+                    priceDisplay.ao = prices['ao-computer'].usd ? `$${prices['ao-computer'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkAO) {
+                    usdAO = 'N/A';
+                    priceDisplay.ao = 'N/A';
+                }
+                document.getElementById('usdAR').textContent = usdAR;
+                document.getElementById('usdARIO').textContent = usdARIO;
+                document.getElementById('usdAO').textContent = usdAO;
+                document.getElementById('usdGrandTotal').textContent = grandTotal > 0 ? grandTotal.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }) : '';
+                return priceDisplay;
+            }
+
+            // Export to CSV logic
+            function exportResultsToCSV() {
+                const table = document.getElementById('results');
+                const rows = table.querySelectorAll('thead tr, tbody tr, tfoot tr.totals-row');
+                let csv = [];
+                for (const row of rows) {
+                    let cols = Array.from(row.querySelectorAll('th,td'));
+                    // Only export visible columns (not 'Skipped')
+                    cols = cols.filter((cell, idx) => {
+                        // For data rows, skip columns with 'Skipped'
+                        if (row.parentElement.tagName === 'TBODY' && cell.textContent.trim() === 'Skipped') return false;
+                        return true;
+                    });
+                    csv.push(cols.map(cell => '"' + cell.textContent.replace(/"/g, '""') + '"').join(','));
+                }
+                // Timestamp for filename
+                const now = new Date();
+                const pad = n => n.toString().padStart(2, '0');
+                const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+                const unixTs = Math.floor(now.getTime() / 1000);
+                const timestamp = `${dateStr}-${unixTs}`;
+                // Download
+                const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `wallet-balances_${timestamp}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Show/hide export button based on results
+            function updateExportButtonVisibility() {
+                const table = document.getElementById('results');
+                const btn = document.getElementById('exportCSVButton');
+                if (table.style.display === 'table' && document.getElementById('resultsBody').children.length > 0) {
+                    btn.style.display = '';
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
+            // Add click handler
+            document.getElementById('checkButton').addEventListener('click', async function() {
+                await checkBalances();
+                updateExportButtonVisibility();
+            });
+            document.getElementById('exportCSVButton').addEventListener('click', exportResultsToCSV);
+        });
+    </script>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <div style="font-size: 12px; color: #666;">
+            v1.0.0
+        </div>
+    </div>
+</body>
+</html> 
