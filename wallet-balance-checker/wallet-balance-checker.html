@@ -299,7 +299,7 @@
                 resultsBody.innerHTML = '';
 
                 // Validate addresses
-                const invalidAddresses = addresses.filter(addr => !/^[a-zA-Z0-9_-]{43}$/.test(addr));
+                const invalidAddresses = addresses.filter(addr => !(/^[a-zA-Z0-9_-]{43}$/.test(addr) || /^0x[a-fA-F0-9]{40}$/.test(addr)));
                 if (invalidAddresses.length > 0) {
                     errorDiv.textContent = `Invalid addresses found: ${invalidAddresses.join(', ')}`;
                     return;
@@ -324,19 +324,27 @@
 
                         // AR Balance
                         if (checkAR) {
-                            try {
-                                const winstonBalance = await arweave.wallets.getBalance(address);
-                                totalARWinston += BigInt(winstonBalance);
-                                const arBalance = arweave.ar.winstonToAr(winstonBalance);
-                                const balanceCell = document.createElement('td');
-                                balanceCell.textContent = `${arBalance} AR`;
-                                row.appendChild(balanceCell);
-                            } catch (error) {
-                                console.error('Error fetching AR balance:', error);
-                                const errorCell = document.createElement('td');
-                                errorCell.textContent = 'Error';
-                                errorCell.style.color = 'red';
-                                row.appendChild(errorCell);
+                            const ethRegex = /^0x[a-fA-F0-9]{40}$/;
+                            if (ethRegex.test(address)) {
+                                const naCell = document.createElement('td');
+                                naCell.textContent = 'NA';
+                                naCell.style.color = '#999';
+                                row.appendChild(naCell);
+                            } else {
+                                try {
+                                    const winstonBalance = await arweave.wallets.getBalance(address);
+                                    totalARWinston += BigInt(winstonBalance);
+                                    const arBalance = arweave.ar.winstonToAr(winstonBalance);
+                                    const balanceCell = document.createElement('td');
+                                    balanceCell.textContent = `${arBalance} AR`;
+                                    row.appendChild(balanceCell);
+                                } catch (error) {
+                                    console.error('Error fetching AR balance:', error);
+                                    const errorCell = document.createElement('td');
+                                    errorCell.textContent = 'Error';
+                                    errorCell.style.color = 'red';
+                                    row.appendChild(errorCell);
+                                }
                             }
                         } else {
                             const skipCell = document.createElement('td');
