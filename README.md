@@ -241,14 +241,6 @@ The script will:
 
 ---
 
-### License
-
-This project is dedicated to the public domain under the **Creative Commons Zero v1.0 Universal (CC0 1.0) license**.  
-You are free to copy, modify, distribute, and perform the work, even for commercial purposes, without asking permission.
-
-For more details, see the [LICENSE](LICENSE) file.
-
----
 
 ## Tool: Wallet Balance Checker (Web App)
 
@@ -298,4 +290,11 @@ Totals and USD values are shown below the table, along with current token prices
 
 ---
 
-**Note:** The old CLI script (`wallet-balance-checker.js`) has been removed. All balance checking is now done via the HTML web app.
+### License
+
+This project is dedicated to the public domain under the **Creative Commons Zero v1.0 Universal (CC0 1.0) license**.  
+You are free to copy, modify, distribute, and perform the work, even for commercial purposes, without asking permission.
+
+For more details, see the [LICENSE](LICENSE) file.
+
+---
