@@ -106,7 +106,7 @@
     </style>
 </head>
 <body>
-    <h1>Arweave Wallet Balance Checker</h1>
+    <h1>AR.IO Wallet Balance Checker</h1>
     
     <div class="note">
         <strong>Tip:</strong> AR balance checking is fast and reliable. If you encounter errors with AO or ARIO balances, 
@@ -134,6 +134,12 @@
                     <label for="checkAO">AO Balance</label>
                 </div>
             </div>
+        </div>
+        <div id="tokenPrices" style="margin: 10px 0 18px 0; font-size: 14px; color: #444;">
+            <strong>Current Prices:</strong>
+            <span id="priceAR">AR: ...</span> |
+            <span id="priceARIO">ARIO: ...</span> |
+            <span id="priceAO">AO: ...</span>
         </div>
         
         <button id="checkButton">Check Balances</button>
@@ -163,8 +169,22 @@
                 <td id="totalARIO">-</td>
                 <td id="totalAO">-</td>
             </tr>
+            <tr class="totals-row">
+                <td>Total Value (USD)</td>
+                <td id="usdAR">-</td>
+                <td id="usdARIO">-</td>
+                <td id="usdAO">-</td>
+            </tr>
+            <tr>
+                <td colspan="4" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
+                    Grand Total (USD): <span id="usdGrandTotal"></span>
+                </td>
+            </tr>
         </tfoot>
     </table>
+    <div style="text-align:right; max-width:1000px; margin: 10px auto 0 auto;">
+        <button id="exportCSVButton" style="display:none; margin-top:8px;">Export to CSV</button>
+    </div>
 
     <script>
         window.addEventListener('load', async function() {
@@ -304,7 +324,16 @@
                 document.getElementById('totalAR').textContent = '-';
                 document.getElementById('totalAO').textContent = '-';
                 document.getElementById('totalARIO').textContent = '-';
+                document.getElementById('usdAR').textContent = '-';
+                document.getElementById('usdARIO').textContent = '-';
+                document.getElementById('usdAO').textContent = '-';
+                document.getElementById('usdGrandTotal').textContent = '';
                 resultsBody.innerHTML = '';
+
+                // Show loading for token prices
+                document.getElementById('priceAR').textContent = 'AR: ...';
+                document.getElementById('priceARIO').textContent = 'ARIO: ...';
+                document.getElementById('priceAO').textContent = 'AO: ...';
 
                 // Validate addresses
                 const invalidAddresses = addresses.filter(addr => !(/^[a-zA-Z0-9_-]{43}$/.test(addr) || /^0x[a-fA-F0-9]{40}$/.test(addr)));
@@ -435,12 +464,32 @@
                     if (checkAR) {
                         const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
                         document.getElementById('totalAR').textContent = `${formatWithCommas(totalAR)} AR`;
+                        window._totalAR = parseFloat(totalAR); // for USD calc
                     }
                     if (checkARIO) {
                         document.getElementById('totalARIO').textContent = `${formatWithCommas(totalARIO)} ARIO`;
+                        window._totalARIO = totalARIO; // for USD calc
                     }
                     if (checkAO) {
                         document.getElementById('totalAO').textContent = `${formatWithCommas(totalAO)} AO`;
+                        window._totalAO = totalAO; // for USD calc
+                    }
+
+                    // Fetch USD prices and update USD row
+                    const lastPrices = await updateUSDRow({
+                        ar: window._totalAR || 0,
+                        ario: window._totalARIO || 0,
+                        ao: window._totalAO || 0,
+                        checkAR,
+                        checkARIO,
+                        checkAO
+                    });
+
+                    // Update token price display
+                    if (lastPrices) {
+                        document.getElementById('priceAR').textContent = 'AR: ' + (lastPrices.ar !== undefined ? lastPrices.ar : 'N/A');
+                        document.getElementById('priceARIO').textContent = 'ARIO: ' + (lastPrices.ario !== undefined ? lastPrices.ario : 'N/A');
+                        document.getElementById('priceAO').textContent = 'AO: ' + (lastPrices.ao !== undefined ? lastPrices.ao : 'N/A');
                     }
 
                 } catch (error) {
@@ -452,14 +501,117 @@
                 }
             }
 
+            // Fetch prices from CoinGecko and update USD row
+            async function updateUSDRow({ ar, ario, ao, checkAR, checkARIO, checkAO }) {
+                // CoinGecko IDs
+                const ids = [];
+                if (checkAR) ids.push('arweave');
+                if (checkARIO) ids.push('ar-io-network');
+                if (checkAO) ids.push('ao-computer');
+                let prices = {};
+                try {
+                    if (ids.length > 0) {
+                        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
+                        const resp = await fetch(url);
+                        prices = await resp.json();
+                    }
+                } catch (e) {
+                    // fallback: all N/A
+                    prices = {};
+                }
+                let usdAR = '-';
+                let usdARIO = '-';
+                let usdAO = '-';
+                let grandTotal = 0;
+                // For returning prices for display
+                let priceDisplay = { ar: undefined, ario: undefined, ao: undefined };
+                if (checkAR && prices['arweave'] && prices['arweave'].usd) {
+                    usdAR = (ar * prices['arweave'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ar * prices['arweave'].usd;
+                    priceDisplay.ar = prices['arweave'].usd ? `$${prices['arweave'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkAR) {
+                    usdAR = 'N/A';
+                    priceDisplay.ar = 'N/A';
+                }
+                if (checkARIO && prices['ar-io-network'] && prices['ar-io-network'].usd) {
+                    usdARIO = (ario * prices['ar-io-network'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ario * prices['ar-io-network'].usd;
+                    priceDisplay.ario = prices['ar-io-network'].usd ? `$${prices['ar-io-network'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkARIO) {
+                    usdARIO = 'N/A';
+                    priceDisplay.ario = 'N/A';
+                }
+                if (checkAO && prices['ao-computer'] && prices['ao-computer'].usd) {
+                    usdAO = (ao * prices['ao-computer'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    grandTotal += ao * prices['ao-computer'].usd;
+                    priceDisplay.ao = prices['ao-computer'].usd ? `$${prices['ao-computer'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                } else if (checkAO) {
+                    usdAO = 'N/A';
+                    priceDisplay.ao = 'N/A';
+                }
+                document.getElementById('usdAR').textContent = usdAR;
+                document.getElementById('usdARIO').textContent = usdARIO;
+                document.getElementById('usdAO').textContent = usdAO;
+                document.getElementById('usdGrandTotal').textContent = grandTotal > 0 ? grandTotal.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }) : '';
+                return priceDisplay;
+            }
+
+            // Export to CSV logic
+            function exportResultsToCSV() {
+                const table = document.getElementById('results');
+                const rows = table.querySelectorAll('thead tr, tbody tr, tfoot tr.totals-row');
+                let csv = [];
+                for (const row of rows) {
+                    let cols = Array.from(row.querySelectorAll('th,td'));
+                    // Only export visible columns (not 'Skipped')
+                    cols = cols.filter((cell, idx) => {
+                        // For data rows, skip columns with 'Skipped'
+                        if (row.parentElement.tagName === 'TBODY' && cell.textContent.trim() === 'Skipped') return false;
+                        return true;
+                    });
+                    csv.push(cols.map(cell => '"' + cell.textContent.replace(/"/g, '""') + '"').join(','));
+                }
+                // Timestamp for filename
+                const now = new Date();
+                const pad = n => n.toString().padStart(2, '0');
+                const dateStr = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+                const unixTs = Math.floor(now.getTime() / 1000);
+                const timestamp = `${dateStr}-${unixTs}`;
+                // Download
+                const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `wallet-balances_${timestamp}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Show/hide export button based on results
+            function updateExportButtonVisibility() {
+                const table = document.getElementById('results');
+                const btn = document.getElementById('exportCSVButton');
+                if (table.style.display === 'table' && document.getElementById('resultsBody').children.length > 0) {
+                    btn.style.display = '';
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
             // Add click handler
-            document.getElementById('checkButton').addEventListener('click', checkBalances);
+            document.getElementById('checkButton').addEventListener('click', async function() {
+                await checkBalances();
+                updateExportButtonVisibility();
+            });
+            document.getElementById('exportCSVButton').addEventListener('click', exportResultsToCSV);
         });
     </script>
 
     <div style="text-align: center; margin-top: 20px;">
         <div style="font-size: 12px; color: #666;">
-            v0.0.2
+            v1.0.0
         </div>
     </div>
 </body>
