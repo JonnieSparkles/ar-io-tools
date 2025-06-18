@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arweave Wallet Balance Checker</title>
+    <title>AR.IO Wallet Balance Checker</title>
     <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
     <!-- Import aoconnect and AR.IO SDK as modules -->
     <script type="module">
@@ -115,8 +115,8 @@
 
     <div class="input-container">
         <p>Enter wallet addresses (one per line or comma-separated):</p>
-        <textarea id="walletAddresses" placeholder="Enter Arweave wallet addresses (one per line or comma-separated)"></textarea>
-        <div class="help-text">Each address should be 43 characters long. You can enter addresses one per line or separate them with commas.</div>
+        <textarea id="walletAddresses" placeholder="Enter wallet addresses (one per line or comma-separated)"></textarea>
+        <div class="help-text"><strong>Note:</strong> Only unlocked token balances will be displayed - staked and withdrawn tokens will not be shown.</div>
         
         <div style="margin: 15px 0; border-top: 1px solid #eee; padding-top: 10px;">
             <p style="margin-bottom: 8px;"><strong>Select which balances to check:</strong></p>
@@ -270,6 +270,14 @@
                 }
             }
 
+            // Helper to format numbers with commas and fixed decimals
+            function formatWithCommas(num, decimals = 6) {
+                if (isNaN(num)) return num;
+                const parts = Number(num).toFixed(decimals).split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return decimals > 0 ? parts.join('.') : parts[0];
+            }
+
             async function checkBalances() {
                 const addresses = parseAddresses(document.getElementById('walletAddresses').value);
                 const errorDiv = document.getElementById('error');
@@ -336,7 +344,7 @@
                                     totalARWinston += BigInt(winstonBalance);
                                     const arBalance = arweave.ar.winstonToAr(winstonBalance);
                                     const balanceCell = document.createElement('td');
-                                    balanceCell.textContent = `${arBalance} AR`;
+                                    balanceCell.textContent = `${formatWithCommas(arBalance)} AR`;
                                     row.appendChild(balanceCell);
                                 } catch (error) {
                                     console.error('Error fetching AR balance:', error);
@@ -362,14 +370,12 @@
                                     const arioBalance = await ario.getBalance({
                                         address: address
                                     });
-                                    
                                     // The documentation indicates that ARIO amounts are in microARIO (1,000,000 = 1 ARIO)
-                                    const arioFormatted = (parseFloat(arioBalance || '0') / 1000000).toFixed(6);
-                                    arioCell.textContent = `${arioFormatted} ARIO`;
+                                    const arioFormatted = (parseFloat(arioBalance || '0') / 1000000);
+                                    arioCell.textContent = `${formatWithCommas(arioFormatted)} ARIO`;
                                     totalARIO += parseFloat(arioFormatted);
                                 } catch (arioError) {
                                     console.error('ARIO SDK error:', arioError);
-                                    
                                     // If SDK call fails with network error, try alternate method
                                     if (arioError.message && (
                                         arioError.message.includes('network') || 
@@ -380,7 +386,6 @@
                                     } else {
                                         arioCell.textContent = '0 ARIO';
                                     }
-                                    
                                     arioCell.style.color = 'orange';
                                 }
                             } catch (error) {
@@ -405,7 +410,7 @@
                                     aoCell.textContent = 'API Unavailable';
                                     aoCell.style.color = 'orange';
                                 } else if (aoBalance && aoBalance !== '0') {
-                                    aoCell.textContent = `${aoBalance} AO`;
+                                    aoCell.textContent = `${formatWithCommas(aoBalance)} AO`;
                                     totalAO += parseFloat(aoBalance);
                                 } else {
                                     aoCell.textContent = '0 AO';
@@ -429,13 +434,13 @@
                     // Update totals
                     if (checkAR) {
                         const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
-                        document.getElementById('totalAR').textContent = `${totalAR} AR`;
+                        document.getElementById('totalAR').textContent = `${formatWithCommas(totalAR)} AR`;
                     }
                     if (checkARIO) {
-                        document.getElementById('totalARIO').textContent = `${totalARIO.toFixed(6)} ARIO`;
+                        document.getElementById('totalARIO').textContent = `${formatWithCommas(totalARIO)} ARIO`;
                     }
                     if (checkAO) {
-                        document.getElementById('totalAO').textContent = `${totalAO.toFixed(6)} AO`;
+                        document.getElementById('totalAO').textContent = `${formatWithCommas(totalAO)} AO`;
                     }
 
                 } catch (error) {
@@ -454,7 +459,7 @@
 
     <div style="text-align: center; margin-top: 20px;">
         <div style="font-size: 12px; color: #666;">
-            v0.0.1
+            v0.0.2
         </div>
     </div>
 </body>
