@@ -8,6 +8,7 @@ This repository includes:
 2. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
 3. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
 4. **Wallet Balance Checker**: A tool to check AR and ARIO token balances for a given wallet address.
+5. **Wallet History Exporter**: A Node.js script to export complete transaction history from an Arweave wallet address to CSV format.
 
 ---
 
