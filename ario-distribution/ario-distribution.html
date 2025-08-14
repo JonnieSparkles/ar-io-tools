@@ -585,6 +585,129 @@
             border-radius: 8px;
             font-size: 0.9rem;
         }
+
+        /* Beautiful card replacement system */
+        .info-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .stat-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+            backdrop-filter: blur(20px);
+        }
+
+        .stat-content {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-description {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: white;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .stat-card:hover .stat-content {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .stat-card:hover .stat-description {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info-tooltip .stat-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .info-icon {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            color: #667eea;
+        }
+
+        .info-tooltip:hover .info-icon {
+            opacity: 1;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Apply card replacement to total displays too */
+        .total-display.info-tooltip {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .total-display.info-tooltip:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.25);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+            backdrop-filter: blur(20px);
+        }
+
+        .total-display .total-content {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .total-display.info-tooltip:hover .total-content {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        .total-display.info-tooltip:hover .stat-description {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Fix spacing for total display labels with info icons */
+        .total-display .total-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+            font-size: 0.8rem;
+        }
+
+        .total-display .info-icon {
+            font-size: 0.6rem;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            color: #667eea;
+        }
+
+        .total-display.info-tooltip:hover .info-icon {
+            opacity: 1;
+            color: white;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -618,25 +741,37 @@
                     </div>
                 </div>
                 
-                <div class="total-display">
-                    <div class="total-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="total-content">
-                        <div class="total-value" id="tvlTokens">0</div>
-                        <div class="total-label">Total Value Locked</div>
-                    </div>
-                </div>
-                
-                <div class="total-display">
-                    <div class="total-icon">
-                        <i class="fas fa-globe"></i>
-                    </div>
-                    <div class="total-content">
-                        <div class="total-value" id="circulatingTokens">0</div>
-                        <div class="total-label">Circulating Supply</div>
-                    </div>
-                </div>
+                                 <div class="total-display info-tooltip">
+                     <div class="total-icon">
+                         <i class="fas fa-chart-line"></i>
+                     </div>
+                     <div class="total-content">
+                         <div class="total-value" id="tvlTokens">0</div>
+                         <div class="total-label">
+                             Total Value Locked
+                             <i class="fas fa-info-circle info-icon"></i>
+                         </div>
+                     </div>
+                     <div class="stat-description">
+                         Tokens actively participating in the network: Protocol Balance + Operator Stake + Delegated + Withdrawn.
+                     </div>
+                 </div>
+                 
+                 <div class="total-display info-tooltip">
+                     <div class="total-icon">
+                         <i class="fas fa-globe"></i>
+                     </div>
+                     <div class="total-content">
+                         <div class="total-value" id="circulatingTokens">0</div>
+                         <div class="total-label">
+                             Circulating Supply
+                             <i class="fas fa-info-circle info-icon"></i>
+                         </div>
+                     </div>
+                     <div class="stat-description">
+                         All ARIO tokens minus vaulted tokens. Total supply available for network participation and trading.
+                     </div>
+                 </div>
                 
                 <div class="total-display">
                     <div class="total-icon">
@@ -701,6 +836,15 @@
             withdrawn: 'Withdrawn Tokens',
             delegated: 'Delegated Tokens',
             liquid: 'Liquid Tokens'
+        };
+
+        const categoryTooltips = {
+            protocolBalance: 'The central vault encoded in the network\'s smart contract. ArNS revenue accumulates here and incentive rewards are distributed from this balance.',
+            liquid: 'Tokens that are freely circulating and available for trading, transfers, and general use. These tokens are not locked in any protocol mechanisms.',
+            staked: 'Tokens staked by AR.IO Gateway operators to participate in the network. Operators must stake ARIO tokens to run gateways and earn rewards.',
+            delegated: 'Tokens that users have delegated to gateway operators to increase their stake weight and earn rewards while supporting the network.',
+            withdrawn: 'Tokens that have been withdrawn from staking or delegation but may still be subject to unbonding periods before becoming fully liquid.',
+            locked: 'Tokens secured in protocol vaults for various purposes including long-term commitments by the core team and backers.'
         };
 
         // Fallback sample data for local development
@@ -879,15 +1023,23 @@
                     const usdValue = ariaPrice > 0 ? formatUSD(value * ariaPrice) : '';
                     
                     const statCard = document.createElement('div');
-                    statCard.className = 'stat-card';
+                    statCard.className = 'stat-card info-tooltip';
                     statCard.innerHTML = `
-                        <div class="stat-icon">
-                            <i class="${categoryIcons[key] || 'fas fa-coins'}"></i>
+                        <div class="stat-content">
+                            <div class="stat-icon">
+                                <i class="${categoryIcons[key] || 'fas fa-coins'}"></i>
+                            </div>
+                            <div class="stat-value">${formattedValue}</div>
+                            ${usdValue ? `<div class="stat-usd">${usdValue}</div>` : ''}
+                            <div class="stat-label">
+                                ${categoryLabels[key] || key}
+                                <i class="fas fa-info-circle info-icon"></i>
+                            </div>
+                            <div class="stat-percentage">${percentage}% of total</div>
                         </div>
-                        <div class="stat-value">${formattedValue}</div>
-                        ${usdValue ? `<div class="stat-usd">${usdValue}</div>` : ''}
-                        <div class="stat-label">${categoryLabels[key] || key}</div>
-                        <div class="stat-percentage">${percentage}% of total</div>
+                        <div class="stat-description">
+                            ${categoryTooltips[key] || 'Token category information'}
+                        </div>
                     `;
                     
                     statsGrid.appendChild(statCard);
@@ -1030,8 +1182,12 @@
             lastUpdated.textContent = `Last updated: ${now.toLocaleString()}`;
         }
 
+
+
         // Load data when page loads
         document.addEventListener('DOMContentLoaded', loadData);
+
+
 
         // Auto-refresh every 5 minutes
         setInterval(loadData, 5 * 60 * 1000);
