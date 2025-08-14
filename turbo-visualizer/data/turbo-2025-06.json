@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "period": { "year": 2025, "month": 6, "label": "June 2025", "source_label": "RDS" },
+  "generated_at": "2025-07-01T00:00:00Z",
+
+  "totals": {
+    "ar_spent": 12838.338522699456,
+    "bytes": 5676860003947,
+    "bundles": 97482
+  },
+
+  "kyve_uploads": {
+    "credits_spent": 1402.9635326697390,
+    "free_items": 33526,
+    "paid_items": 278579,
+    "gib_sent": 580.9989364752546,
+    "unique_uploaders": 17
+  },
+
+  "topups": {
+    "total_credits": 1859.031,
+    "by_currency": [
+      { "code": "ario",    "count": 8,   "amount": 692,              "credits": 1.824017586198 },
+      { "code": "arweave", "count": 61,  "amount": 39.716348059701,  "credits": 30.422722613726 },
+      { "code": "kyve",    "count": 222, "amount": 1204539,          "credits": 1578.769615951637 },
+      { "code": "solana",  "count": 8,   "amount": 0.563802455,      "credits": 12.943477550143 },
+      { "code": "usd",     "count": 70,  "amount": 1718,             "credits": 235.071831826448 }
+    ]
+  },
+
+  "arns_purchases": {
+    "total": 12,
+    "credits": 143.554433676139,
+    "ario_spent": 43371.610699,
+    "usd_equiv": 796.98,
+    "non_buy_name_count": 1
+  },
+
+  "premium_bundles": [
+    { "type": "default", "items": 97482, "bytes": 5676860003947 }
+  ],
+
+  "checksum": {
+    "data_items_total": 97482,
+    "premium_items_sum": 97482,
+    "premium_bytes_sum": 5676860003947,
+    "matches_totals_bytes": true
+  },
+
+  "notes": [
+    "June 2025 data formatted from RDS report.",
+    "Premium bundles data simplified as detailed breakdown not available for this month."
+  ]
+}
+  

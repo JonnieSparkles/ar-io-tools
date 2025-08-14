@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>ArDrive Turbo Analytics Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNncmFkaWVudDApIi8+CjxjaXJjbGUgY3g9IjE2IiBjeT0iMTYiIHI9IjEwIiBmaWxsPSJ3aGl0ZSIvPgo8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSI2IiBmaWxsPSIjZmY2YzU2Ii8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MCIgeDE9IjAiIHkxPSIwIiB4Mj0iMzIiIHkyPSIzMiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjZmY2YzU2Ii8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2ZmOTUwMCIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iNDAiIGZpbGw9InVybCgjZ3JhZGllbnQwKSIvPgo8Y2lyY2xlIGN4PSI5MCIgY3k9IjkwIiByPSI1NSIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iOTAiIGN5PSI5MCIgcj0iMzUiIGZpbGw9IiNmZjZjNTYiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQwIiB4MT0iMCIgeTE9IjAiIHgyPSIxODAiIHkyPSIxODAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iI2ZmNmM1NiIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNmZjk1MDAiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K">
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ArDrive Turbo Analytics Dashboard">
+    <meta name="description" content="A freakin beautiful visualization of ArDrive Turbo upload service statistics. View monthly analytics for data uploads, currency topups, and bundle distribution.">
+    <meta name="keywords" content="ArDrive, Turbo, AR.IO, Arweave, analytics, uploads, KYVE, ArNS, crypto dashboard, blockchain analytics">
+    <meta name="author" content="AR.IO Network">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://turbo-analytics.arweave.net/">
+    <meta property="og:title" content="ArDrive Turbo Analytics Dashboard">
+    <meta property="og:description" content="A freakin beautiful visualization of ArDrive Turbo upload service statistics. View monthly analytics for data uploads, currency topups, and bundle distribution.">
+    <meta property="og:image" content="https://turbo-analytics.arweave.net/preview.png">
+    <meta property="og:site_name" content="AR.IO Network">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="ArDrive Turbo Analytics Dashboard">
+    <meta property="twitter:description" content="A freakin beautiful visualization of ArDrive Turbo upload service statistics. View monthly analytics for data uploads, currency topups, and bundle distribution.">
+    <meta property="twitter:creator" content="@ar_io_network">
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#ff6c56">
+    <meta name="msapplication-TileColor" content="#ff6c56">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Turbo Analytics">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #ff6c56 0%, #ff9500 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.4;
+            padding: 6px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 4px;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: absolute;
+            right: 0;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .period-display {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 6px;
+        }
+
+
+
+        .month-selector {
+            margin-top: 0;
+        }
+
+        .month-selector select {
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 108, 86, 0.3);
+            transition: all 0.3s ease;
+            min-width: 180px;
+            text-align: center;
+        }
+
+        .month-selector select:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 108, 86, 0.4);
+        }
+
+        .month-selector select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 108, 86, 0.3);
+        }
+
+        .month-selector option {
+            background: white;
+            color: #333;
+            padding: 8px;
+        }
+
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .overview-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .overview-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .overview-icon {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .overview-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .overview-label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .overview-trend {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 2px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .trend-up {
+            color: #10b981;
+        }
+
+        .trend-down {
+            color: #ef4444;
+        }
+
+        .trend-neutral {
+            color: #6b7280;
+        }
+
+        .stats-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 6px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .section-icon {
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 108, 86, 0.2);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 200px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 1.2rem;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .error {
+            background: rgba(255, 255, 255, 0.95);
+            color: #c33;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .last-updated {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.75rem;
+            margin-top: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            backdrop-filter: blur(10px);
+        }
+
+        .version-info {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.6rem;
+            margin-top: 2px;
+            opacity: 0.8;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .currency-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .currency-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .currency-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .currency-code {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #333;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .currency-amount {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+
+        .currency-credits {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .bundle-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .bundle-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .bundle-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-3px);
+        }
+
+        .bundle-type {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 8px;
+            text-transform: capitalize;
+        }
+
+        .bundle-stats {
+            font-size: 0.8rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .refresh-btn {
+                position: static;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrapper {
+                height: 250px;
+            }
+
+            .overview-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .currency-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .bundle-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .currency-list {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .overview-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-rocket"></i> ArDrive Turbo Analytics</h1>
+            <button class="refresh-btn" onclick="loadData(currentMonth)">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Loading Turbo analytics data...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="content" style="display: none;">
+            <div class="period-display">
+                <div class="month-selector">
+                    <select id="monthSelect" onchange="changeMonth()">
+                        <option value="">Loading months...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Overview Stats -->
+            <div class="overview-grid" id="overviewGrid">
+                <div class="overview-card">
+                    <div class="overview-icon"><i class="fas fa-coins"></i></div>
+                    <div class="overview-value" id="totalAR">0</div>
+                    <div class="overview-trend" id="arSpentTrend"></div>
+                    <div class="overview-label">AR Spent</div>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-icon"><i class="fas fa-database"></i></div>
+                    <div class="overview-value" id="totalBytes">0</div>
+                    <div class="overview-trend" id="bytesProcessedTrend"></div>
+                    <div class="overview-label">Bytes Processed</div>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-icon"><i class="fas fa-list-ol"></i></div>
+                    <div class="overview-value" id="totalDataItems">0</div>
+                    <div class="overview-trend" id="totalDataItemsTrend"></div>
+                    <div class="overview-label">Total Data Items</div>
+                </div>
+                <div class="overview-card">
+                    <div class="overview-icon"><i class="fas fa-cube"></i></div>
+                    <div class="overview-value" id="totalBundles">0</div>
+                    <div class="overview-trend" id="bundlesProcessedTrend"></div>
+                    <div class="overview-label">Bundles Processed</div>
+                </div>
+            </div>
+
+
+
+            <!-- ArNS Purchases -->
+            <div class="stats-section">
+                <h2 class="section-title">
+                    <i class="fas fa-globe section-icon"></i>
+                    ArNS Turbo Purchases
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="arnsTotal">0</div>
+                        <div class="stat-label">Total Purchases</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="arnsCredits">0</div>
+                        <div class="stat-label">Credits Used</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="arnsArio">0</div>
+                        <div class="stat-label">ARIO Spent</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="arnsUsd">$0</div>
+                        <div class="stat-label">USD Equivalent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Topups by Currency
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="topupsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">
+                        <i class="fas fa-chart-line"></i>
+                        Monthly Data Items Trend
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Currency Details -->
+            <div class="stats-section">
+                <h2 class="section-title">
+                    <i class="fas fa-money-bill-wave section-icon"></i>
+                    Topup Details by Currency
+                </h2>
+                <div class="currency-list" id="currencyList"></div>
+            </div>
+
+            <!-- Premium Bundles Details -->
+            <div class="stats-section">
+                <h2 class="section-title">
+                    <i class="fas fa-boxes section-icon"></i>
+                    Premium Bundle Breakdown
+                </h2>
+                <div class="bundle-list" id="bundleList"></div>
+            </div>
+
+            <div class="version-info">v0.0.0</div>
+        </div>
+    </div>
+
+    <script>
+        let turboData = {};
+        let charts = {};
+        let currentMonth = '';
+        let availableMonths = [];
+
+        // Turbo brand colors
+        const chartColors = [
+            '#ff6c56', '#ff9500', '#ffb347', '#ff7f50', 
+            '#ff8c69', '#ffa07a', '#ffb366', '#ffc966',
+            '#ffd700', '#ffda44', '#ffe066', '#ffeb99'
+        ];
+
+        async function loadData(month = '') {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const contentEl = document.getElementById('content');
+            
+
+            
+            loadingEl.style.display = 'flex';
+            errorEl.style.display = 'none';
+            contentEl.style.display = 'none';
+
+            try {
+                // If this is the first load, discover available months
+                if (availableMonths.length === 0) {
+                    await discoverAvailableMonths();
+                }
+                
+                // If no month specified, use the current month
+                if (!month) {
+                    month = currentMonth;
+                }
+                
+                const fileName = `turbo-${month}.json`;
+                const response = await fetch(`./data/${fileName}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                turboData = await response.json();
+                currentMonth = month;
+                
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+                
+                renderPeriodInfo();
+                await renderOverviewStats();
+                renderArnsStats();
+                await renderCharts();
+                renderCurrencyDetails();
+                renderBundleDetails();
+                
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorEl.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ff6c56; margin-bottom: 15px;"></i>
+                        <h3 style="margin: 0 0 10px 0; color: #333;">Unable to Load Data</h3>
+                        <p style="margin: 0 0 20px 0; color: #666; line-height: 1.4;">
+                            Failed to load Turbo analytics data. Please check that the data file exists.
+                        </p>
+                        <button onclick="loadData()" style="
+                            background: linear-gradient(135deg, #ff6c56, #ff9500);
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            font-weight: 600;
+                            box-shadow: 0 4px 15px rgba(255, 108, 86, 0.3);
+                            transition: all 0.3s ease;
+                        ">
+                            <i class="fas fa-sync-alt"></i> Try Again
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPeriodInfo() {
+            const monthSelect = document.getElementById('monthSelect');
+            
+            // Update selector to match current month
+            monthSelect.value = currentMonth;
+        }
+
+        async function discoverAvailableMonths() {
+            try {
+                // Try to discover month files in order (newest to oldest)
+                const monthsToTry = [
+                    '2025-07', '2025-06', '2025-05', '2025-04'
+                ];
+                
+                for (const month of monthsToTry) {
+                    try {
+                        const response = await fetch(`./data/turbo-${month}.json`);
+                        if (response.ok) {
+                            const monthData = await response.json();
+                            availableMonths.push({
+                                value: month,
+                                label: monthData.period.label
+                            });
+                        }
+                    } catch (e) {
+                        // Month file doesn't exist, continue to next
+                        continue;
+                    }
+                }
+                
+                // Ensure we have at least one month
+                if (availableMonths.length === 0) {
+                    throw new Error('No month files found');
+                }
+                
+                // Auto-select the most recent month (first in the array)
+                currentMonth = availableMonths[0].value;
+                
+                // Populate the dropdown
+                populateMonthSelector();
+                
+
+                
+            } catch (error) {
+                // Fallback to basic options
+                // Fallback to basic options
+                availableMonths = [
+                    { value: '2025-07', label: 'July 2025' },
+                    { value: '2025-06', label: 'June 2025' },
+                    { value: '2025-05', label: 'May 2025' },
+                    { value: '2025-04', label: 'April 2025' }
+                ];
+                currentMonth = '2025-07';
+                populateMonthSelector();
+            }
+        }
+
+        function populateMonthSelector() {
+            const monthSelect = document.getElementById('monthSelect');
+            monthSelect.innerHTML = '';
+            
+            availableMonths.forEach(month => {
+                const option = document.createElement('option');
+                option.value = month.value;
+                option.textContent = month.label;
+                monthSelect.appendChild(option);
+            });
+        }
+
+        function changeMonth() {
+            const monthSelect = document.getElementById('monthSelect');
+            const selectedMonth = monthSelect.value;
+            
+            if (selectedMonth !== currentMonth) {
+                loadData(selectedMonth);
+            }
+        }
+
+        async function renderOverviewStats() {
+            const totalAR = document.getElementById('totalAR');
+            const totalBytes = document.getElementById('totalBytes');
+            const totalDataItems = document.getElementById('totalDataItems');
+            const totalBundles = document.getElementById('totalBundles');
+            
+            if (turboData.totals) {
+                totalAR.textContent = formatNumber(turboData.totals.ar_spent || 0);
+                totalBytes.textContent = formatBytes(turboData.totals.bytes || 0);
+                totalBundles.textContent = formatNumber(turboData.totals.bundles || 0);
+            }
+            
+            if (turboData.checksum) {
+                totalDataItems.textContent = formatNumber(turboData.checksum.data_items_total || 0);
+            }
+
+            // Calculate and display trends
+            await calculateTrends();
+        }
+
+        async function calculateTrends() {
+            if (!currentMonth || availableMonths.length < 2) {
+                return;
+            }
+
+            // Find the current month index
+            const currentIndex = availableMonths.findIndex(m => m.value === currentMonth);
+            
+            if (currentIndex === availableMonths.length - 1) {
+                // Clear all trend indicators
+                clearTrendIndicators();
+                return;
+            }
+            
+            if (currentIndex === -1) {
+                return;
+            }
+
+            // Get the previous month (chronologically older)
+            const previousMonth = availableMonths[currentIndex + 1]; // +1 because array is newest to oldest
+            
+            if (!previousMonth) {
+                clearTrendIndicators();
+                return;
+            }
+            
+            try {
+                // Load previous month data
+                const fileName = `turbo-${previousMonth.value}.json`;
+                const response = await fetch(`./data/${fileName}`);
+                if (!response.ok) {
+                    return;
+                }
+                
+                const previousData = await response.json();
+                
+                // Calculate trends for each metric
+                updateTrendIndicator('arSpentTrend', 
+                    turboData.totals?.ar_spent || 0, 
+                    previousData.totals?.ar_spent || 0);
+                
+                updateTrendIndicator('bytesProcessedTrend', 
+                    turboData.totals?.bytes || 0, 
+                    previousData.totals?.bytes || 0);
+                
+                updateTrendIndicator('totalDataItemsTrend', 
+                    turboData.checksum?.data_items_total || 0, 
+                    previousData.checksum?.data_items_total || 0);
+                
+                updateTrendIndicator('bundlesProcessedTrend', 
+                    turboData.totals?.bundles || 0, 
+                    previousData.totals?.bundles || 0);
+                
+            } catch (e) {
+                // Could not load previous month data for trends
+            }
+        }
+
+        function clearTrendIndicators() {
+            const trendElements = ['arSpentTrend', 'bytesProcessedTrend', 'totalDataItemsTrend', 'bundlesProcessedTrend'];
+            trendElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerHTML = '<span class="trend-neutral">N/A</span>';
+                }
+            });
+        }
+
+        function updateTrendIndicator(elementId, currentValue, previousValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            if (previousValue === 0) {
+                element.innerHTML = '<span class="trend-neutral">N/A</span>';
+                return;
+            }
+            
+            const change = currentValue - previousValue;
+            const percentChange = (change / previousValue) * 100;
+            
+            if (change > 0) {
+                element.innerHTML = `<span class="trend-up">+${percentChange.toFixed(1)}%</span>`;
+            } else if (change < 0) {
+                element.innerHTML = `<span class="trend-down">${percentChange.toFixed(1)}%</span>`;
+            } else {
+                element.innerHTML = '<span class="trend-neutral">0%</span>';
+            }
+        }
+
+
+
+        function renderArnsStats() {
+            const arns = turboData.arns_purchases || {};
+            
+            document.getElementById('arnsTotal').textContent = formatNumber(arns.total || 0);
+            document.getElementById('arnsCredits').textContent = formatNumber(arns.credits || 0);
+            document.getElementById('arnsArio').textContent = formatNumber(arns.ario_spent || 0);
+            document.getElementById('arnsUsd').textContent = '$' + formatNumber(arns.usd_equiv || 0);
+        }
+
+        async function renderCharts() {
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => {
+                if (chart) chart.destroy();
+            });
+
+            renderTopupsChart();
+            await renderMonthlyTrendChart();
+        }
+
+        function renderTopupsChart() {
+            const ctx = document.getElementById('topupsChart').getContext('2d');
+            const currencies = turboData.topups?.by_currency || [];
+            
+            const labels = currencies.map(c => c.code.toUpperCase());
+            const data = currencies.map(c => c.credits);
+            
+            charts.topups = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: chartColors.slice(0, data.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const currency = currencies[context.dataIndex];
+                                    return `${context.label}: ${formatNumber(context.raw)} credits (${currency.count} txns)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderMonthlyTrendChart() {
+            const ctx = document.getElementById('monthlyTrendChart').getContext('2d');
+            
+            // Get data items for all available months
+            const monthData = [];
+            const labels = [];
+            const monthInfo = [];
+            
+            for (const month of availableMonths) {
+                try {
+                    const fileName = `turbo-${month.value}.json`;
+                    const response = await fetch(`./data/${fileName}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.checksum && data.checksum.data_items_total) {
+                            monthInfo.push({
+                                value: month.value,
+                                label: data.period.label,
+                                year: data.period.year,
+                                month: data.period.month,
+                                dataItems: data.checksum.data_items_total
+                            });
+                        }
+                    }
+                } catch (e) {
+                    // Could not load data for this month
+                }
+            }
+            
+            // Sort by year and month (oldest to newest)
+            monthInfo.sort((a, b) => {
+                if (a.year !== b.year) {
+                    return a.year - b.year;
+                }
+                return a.month - b.month;
+            });
+            
+            // Extract sorted data
+            monthInfo.forEach(info => {
+                monthData.push(info.dataItems);
+                labels.push(info.label);
+            });
+            
+            charts.monthlyTrend = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Data Items',
+                        data: monthData,
+                        backgroundColor: chartColors.slice(0, monthData.length).map(color => color + '80'),
+                        borderColor: chartColors.slice(0, monthData.length),
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Data Items: ${formatNumber(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCurrencyDetails() {
+            const currencyList = document.getElementById('currencyList');
+            const currencies = turboData.topups?.by_currency || [];
+            
+            currencyList.innerHTML = '';
+            
+            currencies.forEach(currency => {
+                const item = document.createElement('div');
+                item.className = 'currency-item';
+                item.innerHTML = `
+                    <div class="currency-code">${currency.code}</div>
+                    <div class="currency-amount">Amount: ${formatNumber(currency.amount)}</div>
+                    <div class="currency-credits">Credits: ${formatNumber(currency.credits)}</div>
+                    <div class="currency-credits">Transactions: ${currency.count}</div>
+                `;
+                currencyList.appendChild(item);
+            });
+        }
+
+        function renderBundleDetails() {
+            const bundleList = document.getElementById('bundleList');
+            const bundles = turboData.premium_bundles || [];
+            
+            bundleList.innerHTML = '';
+            
+            bundles.forEach(bundle => {
+                const item = document.createElement('div');
+                item.className = 'bundle-item';
+                const typeName = bundle.type.replace(/_/g, ' ').replace(/dedicated bundles/g, '').trim();
+                item.innerHTML = `
+                    <div class="bundle-type">${typeName}</div>
+                    <div class="bundle-stats">
+                        Items: ${formatNumber(bundle.items)}<br>
+                        Bytes: ${formatBytes(bundle.bytes)}
+                    </div>
+                `;
+                bundleList.appendChild(item);
+            });
+        }
+
+        function formatNumber(num) {
+            if (num >= 1000000000) {
+                return (num / 1000000000).toFixed(2) + 'B';
+            } else if (num >= 1000000) {
+                return (num / 1000000).toFixed(2) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(2) + 'K';
+            }
+            return num.toLocaleString();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes >= 1099511627776) { // TB
+                return (bytes / 1099511627776).toFixed(2) + ' TB';
+            } else if (bytes >= 1073741824) { // GB
+                return (bytes / 1073741824).toFixed(2) + ' GB';
+            } else if (bytes >= 1048576) { // MB
+                return (bytes / 1048576).toFixed(2) + ' MB';
+            } else if (bytes >= 1024) { // KB
+                return (bytes / 1024).toFixed(2) + ' KB';
+            }
+            return bytes + ' bytes';
+        }
+
+
+
+        // Load data when page loads
+        document.addEventListener('DOMContentLoaded', () => loadData());
+    </script>
+</body>
+</html>
