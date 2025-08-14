@@ -9,6 +9,7 @@
     "gateway-details": "node src/gateway-details-fetcher.js",
     "json-to-csv": "node src/json-to-csv.js",
     "wallet-balance": "node src/wallet-balance-checker.js",
+    "dev": "node dev-server.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -29,5 +30,9 @@
     "@permaweb/aoconnect": "^0.0.77",
     "arweave": "^1.15.5",
     "json2csv": "^6.0.0-alpha.2"
+  },
+  "devDependencies": {
+    "express": "^4.19.2",
+    "http-proxy-middleware": "^3.0.3"
   }
 }

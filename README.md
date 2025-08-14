@@ -4,11 +4,63 @@ A collection of tools designed to work with the AR.IO SDK and the Arweave networ
 
 This repository includes:
 
-1. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
-2. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
-3. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
-4. **Wallet Balance Checker**: A tool to check AR and ARIO token balances for a given wallet address.
-5. **Wallet History Exporter**: A Node.js script to export complete transaction history from an Arweave wallet address to CSV format.
+1. **ARIO Distribution Dashboard**: A beautiful web dashboard showing real-time ARIO token distribution with charts and USD values.
+2. **ArNS Details Fetcher**: A script to fetch and save details about Arweave Name System (ArNS) names.
+3. **Gateway Details Fetcher**: A script to fetch and save details about AR.IO Gateways.
+4. **JSON-to-CSV Converter**: A simple utility to convert JSON files to CSV format.
+5. **Wallet Balance Checker**: A tool to check AR and ARIO token balances for a given wallet address.
+6. **Wallet History Exporter**: A Node.js script to export complete transaction history from an Arweave wallet address to CSV format.
+
+---
+
+## Tool: ARIO Distribution Dashboard
+
+### Description
+
+The ARIO Distribution Dashboard is a beautiful, responsive web application that provides real-time visualization of AR.IO (ARIO) token distribution across different categories. It displays comprehensive analytics including token balances, USD conversions, and interactive charts.
+
+### Features
+
+- **Real-time Data**: Fetches live token distribution from AR.IO network APIs
+- **Financial Metrics**: Shows current ARIO price, 24h price change, and USD conversions
+- **Key Metrics Display**:
+  - Current ARIO token price with 24h change indicator
+  - Total Value Locked (TVL) - sum of protocol balance, operator stake, delegated, and withdrawn tokens
+  - Circulating supply from the network
+  - Total ARIO token count with breakdown
+- **Interactive Charts**: 
+  - Distribution overview (pie chart)
+  - Balance comparison (bar chart)
+- **Token Categories**:
+  - Protocol Balance
+  - Locked Tokens  
+  - Operator Stake
+  - Withdrawn Tokens
+  - Delegated Tokens
+  - Liquid Tokens
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+- **Professional UI**: Modern glassmorphism design with AR.IO brand colors
+- **Social Sharing**: Open Graph and Twitter Card support with favicon
+- **Auto-refresh**: Updates data every 5 minutes automatically
+
+### Usage
+
+1. Open `ario-distribution/ario-distribution.html` in your web browser
+2. For best results, serve over HTTP:
+   ```bash
+   python -m http.server 8080
+   # Then visit: http://localhost:8080/ario-distribution/ario-distribution.html
+   ```
+3. Click the refresh button to manually update data
+4. View real-time token distribution with USD values and interactive charts
+
+### Technical Details
+
+- **Data Sources**: AR.IO token supply API and CoinGecko price API
+- **Fallback Support**: CORS proxy and sample data for local development
+- **Framework**: Vanilla JavaScript with Chart.js for visualizations
+- **Responsive**: Mobile-first design with multiple breakpoints
+- **Performance**: Optimized for fast loading and smooth interactions
 
 ---
 
