@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>AR.IO Tools Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNncmFkaWVudDApIi8+CjxjaXJjbGUgY3g9IjE2IiBjeT0iMTYiIHI9IjEwIiBmaWxsPSJ3aGl0ZSIvPgo8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSI2IiBmaWxsPSIjMTBiOTgxIi8+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImdyYWRpZW50MCIgeDE9IjAiIHkxPSIwIiB4Mj0iMzIiIHkyPSIzMiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjMTBiOTgxIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzA1OTY2OSIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iNDAiIGZpbGw9InVybCgjZ3JhZGllbnQwKSIvPgo8Y2lyY2xlIGN4PSI5MCIgY3k9IjkwIiByPSI1NSIgZmlsbD0id2hpdGUiLz4KPGNpcmNsZSBjeD0iOTAiIGN5PSI5MCIgcj0iMzUiIGZpbGw9IiMxMGI5ODEiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQwIiB4MT0iMCIgeTE9IjAiIHgyPSIxODAiIHkyPSIxODAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KPHN0b3Agc3RvcC1jb2xvcj0iIzEwYjk4MSIvPgo8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwNTk2NjkiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8L3N2Zz4K">
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="AR.IO Tools and Dashboards">
+    <meta name="description" content="A freakin beautiful collection of AR.IO ecosystem tools including ARIO token distribution analytics, ArDrive Turbo statistics, gateway analysis, and wallet utilities. Navigate between all available tools in one place.">
+    <meta name="keywords" content="AR.IO, ARIO, ArDrive, Turbo, Arweave, blockchain tools, crypto dashboard, token analytics, gateway analysis">
+    <meta name="author" content="AR.IO Network">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / fFacebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="AR.IO Tools and Dashboards">
+    <meta property="og:description" content="A freakin beautiful collection of AR.IO ecosystem tools including ARIO token distribution analytics, ArDrive Turbo statistics, gateway analysis, and wallet utilities.">
+    <meta property="og:site_name" content="AR.IO Network">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="AR.IO Tools and Dashboards">
+    <meta property="twitter:description" content="A freakin beautiful collection of AR.IO ecosystem tools including ARIO token distribution analytics, ArDrive Turbo statistics, gateway analysis, and wallet utilities.">
+    <meta property="twitter:creator" content="@ar_io_network">
+    <meta property="twitter:site" content="@ar_io_network">
+    
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#10b981">
+    <meta name="msapplication-TileColor" content="#10b981">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="AR.IO Tools and Dashboards">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.4;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 10px 0;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 400;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .tool-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1;
+        }
+
+        .tool-card:hover::before {
+            opacity: 1;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        .tool-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .tool-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover .tool-icon {
+            transform: scale(1.1);
+        }
+
+        .tool-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .tool-description {
+            font-size: 1rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .tool-features {
+            list-style: none;
+            margin-bottom: 25px;
+        }
+
+        .tool-features li {
+            font-size: 0.9rem;
+            color: #777;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+        }
+
+        .tool-features li::before {
+            content: '✓';
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .tool-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .tool-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Special styling for different tools */
+        .tool-card.ario {
+            border-left: 4px solid #667eea;
+        }
+
+        .tool-card.turbo {
+            border-left: 4px solid #ff6c56;
+        }
+
+        .tool-card.turbo .tool-icon {
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tool-card.turbo .tool-link {
+            background: linear-gradient(135deg, #ff6c56, #ff9500);
+            box-shadow: 0 4px 15px rgba(255, 108, 86, 0.3);
+        }
+
+        .tool-card.turbo .tool-link:hover {
+            box-shadow: 0 8px 25px rgba(255, 108, 86, 0.4);
+        }
+
+        .tool-card.gateway {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .tool-card.gateway .tool-icon {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tool-card.gateway .tool-link {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .tool-card.gateway .tool-link:hover {
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+        }
+
+        .tool-card.normalize {
+            border-left: 4px solid #ec4899;
+        }
+
+        .tool-card.normalize .tool-icon {
+            background: linear-gradient(135deg, #ec4899, #be185d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tool-card.normalize .tool-link {
+            background: linear-gradient(135deg, #ec4899, #be185d);
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
+        }
+
+        .tool-card.normalize .tool-link:hover {
+            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.4);
+        }
+
+        .tool-card.balances {
+            border-left: 4px solid #06b6d4;
+        }
+
+        .tool-card.balances .tool-icon {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tool-card.balances .tool-link {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+        }
+
+        .tool-card.balances .tool-link:hover {
+            box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+
+        .footer a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .footer a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+                align-items: flex-start;
+                padding-top: 30px;
+            }
+
+            .container {
+                gap: 20px;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .page-subtitle {
+                font-size: 1rem;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .tool-card {
+                padding: 25px;
+            }
+
+            .tool-icon {
+                font-size: 2.5rem;
+            }
+
+            .tool-title {
+                font-size: 1.4rem;
+            }
+
+            .tool-description {
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tool-card {
+                padding: 20px;
+            }
+
+            .tool-icon {
+                font-size: 2.2rem;
+            }
+
+            .tool-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-th-large"></i> AR.IO Tools and Dashboard</h1>
+            <p class="page-subtitle">Explore the AR.IO ecosystem with these freakin beautiful analytics tools</p>
+        </div>
+
+        <div class="tools-grid">
+            <!-- ARIO Distribution Tool -->
+            <div class="tool-card ario" onclick="navigateToTool('arns:ario_jonniesparkles')">
+                <div class="tool-content">
+                    <div class="tool-icon">
+                        <i class="fas fa-coins"></i>
+                    </div>
+                    <h2 class="tool-title">ARIO Token Distribution</h2>
+                    <p class="tool-description">
+                        Real-time visualization of AR.IO ($ARIO) token distribution across different categories with live price data and USD conversions.
+                    </p>
+                    <ul class="tool-features">
+                        <li>Live token distribution analytics</li>
+                        <li>Real-time price tracking</li>
+                        <li>Interactive charts & visualizations</li>
+                        <li>Mobile-responsive design</li>
+                    </ul>
+                    <div class="tool-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        Launch ARIO Dashboard
+                    </div>
+                </div>
+            </div>
+
+            <!-- Turbo Analytics Tool -->
+            <div class="tool-card turbo" onclick="navigateToTool('arns:turbo_jonniesparkles')">
+                <div class="tool-content">
+                    <div class="tool-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h2 class="tool-title">ArDrive Turbo Analytics</h2>
+                    <p class="tool-description">
+                        Beautiful visualization of ArDrive Turbo upload service statistics with monthly analytics for data uploads and currency topups.
+                    </p>
+                    <ul class="tool-features">
+                        <li>Monthly upload statistics</li>
+                        <li>Currency breakdown analysis</li>
+                        <li>Bundle distribution metrics</li>
+                        <li>Historical trend tracking</li>
+                    </ul>
+                    <div class="tool-link">
+                        <i class="fas fa-external-link-alt"></i>
+                        Launch Turbo Analytics
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gateway Analysis Tool -->
+            <div class="tool-card gateway" onclick="navigateToTool('txid:FU82zp5DwtvMoApzljEqJWaSYKfuXfM9zZhlblh1jro')">
+                <div class="tool-content">
+                    <div class="tool-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h2 class="tool-title">Gateway Centralization Analysis</h2>
+                    <p class="tool-description">
+                        Comprehensive analysis of AR.IO gateway distribution studying regional clustering, domain concentration, and service provider diversity across the network.
+                    </p>
+                    <ul class="tool-features">
+                        <li>Regional gateway distribution</li>
+                        <li>Domain clustering analysis</li>
+                        <li>Service provider mapping</li>
+                        <li>Decentralization metrics</li>
+                    </ul>
+                    <div class="tool-link">
+                        <i class="fas fa-chart-network"></i>
+                        Launch Gateway Analysis
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Normalizer Tool -->
+            <div class="tool-card normalize" onclick="navigateToTool('arns:normalize-it_jonniesparkles')">
+                <div class="tool-content">
+                    <div class="tool-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h2 class="tool-title">Address Normalizer</h2>
+                    <p class="tool-description">
+                        Convert Solana and EVM addresses to their normalized Arweave format. Simple, fast address conversion that runs entirely in your browser.
+                    </p>
+                    <ul class="tool-features">
+                        <li>Solana address conversion</li>
+                        <li>EVM address normalization</li>
+                        <li>Client-side processing</li>
+                        <li>Copy-to-clipboard functionality</li>
+                    </ul>
+                    <div class="tool-link">
+                        <i class="fas fa-sync-alt"></i>
+                        Launch Normalizer
+                    </div>
+                </div>
+            </div>
+
+            <!-- Wallet Balance Checker Tool -->
+            <div class="tool-card balances" onclick="navigateToTool('arns:balances_jonniesparkles')">
+                <div class="tool-content">
+                    <div class="tool-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h2 class="tool-title">Wallet Balance Checker</h2>
+                    <p class="tool-description">
+                        Check AR, ARIO, and AO token balances for multiple wallet addresses simultaneously. Includes USD value calculations and CSV export functionality.
+                    </p>
+                    <ul class="tool-features">
+                        <li>Multi-token balance checking</li>
+                        <li>Batch address processing</li>
+                        <li>USD value calculations</li>
+                        <li>CSV export functionality</li>
+                    </ul>
+                    <div class="tool-link">
+                        <i class="fas fa-search-dollar"></i>
+                        Launch Balance Checker
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with ❤️ for the <a href="https://ar.io" target="_blank">AR.IO Network</a> ecosystem</p>
+        </div>
+    </div>
+
+    <script>
+        function detectGateway() {
+            const hostname = window.location.hostname;
+            
+            // Check if we're on a known ArNS subdomain pattern
+            const arnsPattern = /^[a-zA-Z0-9_-]+\.(.+)$/;
+            const match = hostname.match(arnsPattern);
+            
+            if (match) {
+                // We're on an ArNS subdomain, extract the gateway domain
+                return match[1];
+            }
+            
+            // Check if we're on a gateway serving content via path
+            // Look for common gateway patterns
+            const knownGateways = [
+                'arweave.net',
+                'ar.io',
+                'g8way.io',
+                'arweave.dev',
+                'permagate.io'
+            ];
+            
+            for (const gateway of knownGateways) {
+                if (hostname.includes(gateway) || hostname === gateway) {
+                    return gateway;
+                }
+            }
+            
+            // Check if hostname looks like a gateway (has common patterns)
+            if (hostname.includes('gateway') || hostname.includes('arweave') || hostname.includes('ar.')) {
+                return hostname;
+            }
+            
+            // If we can't detect a gateway, check if we're on localhost or similar
+            if (hostname === 'localhost' || hostname.startsWith('127.') || hostname.startsWith('192.168.')) {
+                return 'arweave.net'; // fallback
+            }
+            
+            // Default fallback
+            return 'arweave.net';
+        }
+
+        function navigateToTool(toolIdentifier) {
+            const gateway = detectGateway();
+            let fullUrl;
+            
+            if (toolIdentifier.startsWith('arns:')) {
+                // Handle ArNS names as subdomains
+                const arnsName = toolIdentifier.replace('arns:', '');
+                const protocol = window.location.protocol;
+                fullUrl = `${protocol}//${arnsName}.${gateway}`;
+            } else if (toolIdentifier.startsWith('txid:')) {
+                // Handle transaction IDs as paths
+                const txId = toolIdentifier.replace('txid:', '');
+                const protocol = window.location.protocol;
+                fullUrl = `${protocol}//${gateway}/${txId}`;
+            } else {
+                // Handle relative URLs (fallback for any other format)
+                fullUrl = new URL(toolIdentifier, window.location.href).href;
+            }
+            
+            console.log(`Detected gateway: ${gateway}`);
+            console.log(`Navigating to: ${fullUrl}`);
+            window.open(fullUrl, '_blank');
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Could add modal functionality later
+            }
+        });
+
+        // Add some visual feedback for loading states
+        document.querySelectorAll('.tool-card').forEach(card => {
+            card.addEventListener('click', function() {
+                const link = this.querySelector('.tool-link');
+                const originalText = link.innerHTML;
+                link.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                
+                // Reset after a short delay (in case navigation is slow)
+                setTimeout(() => {
+                    link.innerHTML = originalText;
+                }, 2000);
+            });
+        });
+
+        // Debug info for development
+        console.log('Current location:', window.location.href);
+        console.log('Detected gateway:', detectGateway());
+    </script>
+</body>
+</html>

@@ -6,7 +6,8 @@
   "totals": {
     "ar_spent": 20116.749145724471,
     "bytes": 11739196761103,
-    "bundles": 99982
+    "bundles": 99982,
+    "unique_uploaders": 25461
   },
 
   "kyve_uploads": {

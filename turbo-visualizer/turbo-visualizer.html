@@ -626,6 +626,16 @@
                         <canvas id="monthlyTrendChart"></canvas>
                     </div>
                 </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">
+                        <i class="fas fa-users"></i>
+                        Monthly Unique Uploaders Trend
+                    </h3>
+                    <div class="chart-wrapper">
+                        <canvas id="uniqueUploadersChart"></canvas>
+                    </div>
+                </div>
             </div>
 
             <!-- Currency Details -->
@@ -743,7 +753,7 @@
             try {
                 // Try to discover month files in order (newest to oldest)
                 const monthsToTry = [
-                    '2025-07', '2025-06', '2025-05', '2025-04'
+                    '2025-08', '2025-07', '2025-06', '2025-05', '2025-04'
                 ];
                 
                 for (const month of monthsToTry) {
@@ -779,12 +789,13 @@
                 // Fallback to basic options
                 // Fallback to basic options
                 availableMonths = [
+                    { value: '2025-08', label: 'August 2025' },
                     { value: '2025-07', label: 'July 2025' },
                     { value: '2025-06', label: 'June 2025' },
                     { value: '2025-05', label: 'May 2025' },
                     { value: '2025-04', label: 'April 2025' }
                 ];
-                currentMonth = '2025-07';
+                currentMonth = '2025-08';
                 populateMonthSelector();
             }
         }
@@ -938,6 +949,7 @@
 
             renderTopupsChart();
             await renderMonthlyTrendChart();
+            await renderUniqueUploadersChart();
         }
 
         function renderTopupsChart() {
@@ -1048,6 +1060,100 @@
                             callbacks: {
                                 label: function(context) {
                                     return `Data Items: ${formatNumber(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function renderUniqueUploadersChart() {
+            const ctx = document.getElementById('uniqueUploadersChart').getContext('2d');
+            
+            // Get unique uploaders data for all available months
+            const monthData = [];
+            const labels = [];
+            const monthInfo = [];
+            
+            for (const month of availableMonths) {
+                try {
+                    const fileName = `turbo-${month.value}.json`;
+                    const response = await fetch(`./data/${fileName}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.totals && data.totals.unique_uploaders) {
+                            monthInfo.push({
+                                value: month.value,
+                                label: data.period.label,
+                                year: data.period.year,
+                                month: data.period.month,
+                                uniqueUploaders: data.totals.unique_uploaders
+                            });
+                        }
+                    }
+                } catch (e) {
+                    // Could not load data for this month
+                }
+            }
+            
+            // Sort by year and month (oldest to newest)
+            monthInfo.sort((a, b) => {
+                if (a.year !== b.year) {
+                    return a.year - b.year;
+                }
+                return a.month - b.month;
+            });
+            
+            // Extract sorted data
+            monthInfo.forEach(info => {
+                monthData.push(info.uniqueUploaders);
+                labels.push(info.label);
+            });
+            
+            charts.uniqueUploaders = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Unique Uploaders',
+                        data: monthData,
+                        backgroundColor: chartColors[1] + '20',
+                        borderColor: chartColors[1],
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: chartColors[1],
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Unique Uploaders: ${formatNumber(context.raw)}`;
                                 }
                             }
                         }
