@@ -752,10 +752,8 @@
 
         async function discoverAvailableMonths() {
             try {
-                // Try to discover month files in order (newest to oldest)
-                const monthsToTry = [
-                    '2025-08', '2025-07', '2025-06', '2025-05', '2025-04'
-                ];
+                // Generate a comprehensive list of potential months to check
+                const monthsToTry = generateMonthsToTry();
                 
                 for (const month of monthsToTry) {
                     try {
@@ -764,7 +762,9 @@
                             const monthData = await response.json();
                             availableMonths.push({
                                 value: month,
-                                label: monthData.period.label
+                                label: monthData.period.label,
+                                year: monthData.period.year,
+                                month: monthData.period.month
                             });
                         }
                     } catch (e) {
@@ -773,32 +773,59 @@
                     }
                 }
                 
+                // Sort months by year and month (newest first)
+                availableMonths.sort((a, b) => {
+                    if (a.year !== b.year) {
+                        return b.year - a.year; // Newer year first
+                    }
+                    return b.month - a.month; // Newer month first
+                });
+                
                 // Ensure we have at least one month
                 if (availableMonths.length === 0) {
                     throw new Error('No month files found');
                 }
                 
-                // Auto-select the most recent month (first in the array)
+                // Auto-select the most recent month (first in the sorted array)
                 currentMonth = availableMonths[0].value;
                 
                 // Populate the dropdown
                 populateMonthSelector();
                 
-
-                
             } catch (error) {
-                // Fallback to basic options
+                console.warn('Could not dynamically discover months, using fallback');
                 // Fallback to basic options
                 availableMonths = [
-                    { value: '2025-08', label: 'August 2025' },
-                    { value: '2025-07', label: 'July 2025' },
-                    { value: '2025-06', label: 'June 2025' },
-                    { value: '2025-05', label: 'May 2025' },
-                    { value: '2025-04', label: 'April 2025' }
+                    { value: '2025-09', label: 'September 2025', year: 2025, month: 9 },
+                    { value: '2025-08', label: 'August 2025', year: 2025, month: 8 },
+                    { value: '2025-07', label: 'July 2025', year: 2025, month: 7 },
+                    { value: '2025-06', label: 'June 2025', year: 2025, month: 6 },
+                    { value: '2025-05', label: 'May 2025', year: 2025, month: 5 },
+                    { value: '2025-04', label: 'April 2025', year: 2025, month: 4 }
                 ];
-                currentMonth = '2025-08';
+                currentMonth = '2025-09';
                 populateMonthSelector();
             }
+        }
+
+        function generateMonthsToTry() {
+            const months = [];
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11
+            
+            // Check from current month back to 2 years ago
+            for (let year = currentYear; year >= currentYear - 2; year--) {
+                const startMonth = (year === currentYear) ? currentMonth : 12;
+                const endMonth = (year === currentYear - 2) ? Math.max(1, currentMonth - 24) : 1;
+                
+                for (let month = startMonth; month >= endMonth; month--) {
+                    const monthStr = month.toString().padStart(2, '0');
+                    months.push(`${year}-${monthStr}`);
+                }
+            }
+            
+            return months;
         }
 
         function populateMonthSelector() {
