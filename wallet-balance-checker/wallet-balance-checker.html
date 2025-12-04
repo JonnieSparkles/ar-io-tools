@@ -20,9 +20,22 @@
     <link rel="icon" type="image/png" href="./favicon.png">
    
     <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
+    
+    <!-- Add browser polyfills for aoconnect -->
+    <script>
+        // Polyfill for process.env that aoconnect might need
+        if (typeof process === 'undefined') {
+            window.process = {
+                env: {},
+                browser: true
+            };
+        }
+    </script>
+    
     <!-- Import aoconnect and AR.IO SDK as modules -->
     <script type="module">
-        import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect/dist/browser.js';
+        // Pin to a specific version known to work in browsers
+        import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect@0.0.57/dist/browser.js';
         import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.13.0/bundles/web.bundle.min.js';
         window.AOProcess = AOProcess;
         window.connect = connect;
