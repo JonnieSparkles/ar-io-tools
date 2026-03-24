@@ -26,7 +26,7 @@
   "author": "",
   "license": "CC0-1.0",
   "dependencies": {
-    "@ar.io/sdk": "^3.8.4",
+    "@ar.io/sdk": "^3.23.1",
     "@permaweb/aoconnect": "^0.0.77",
     "arweave": "^1.15.5",
     "json2csv": "^6.0.0-alpha.2"
