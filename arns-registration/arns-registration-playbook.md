@@ -24,32 +24,15 @@ npm install -g @ar.io/sdk
 npm install -g "@ar.io/sdk"
 ```
 
-Verify the CLI is available:
+### Windows: use `ar.io.ps1` instead of `ar.io`
 
-```bash
-ar.io --help
-```
+On Windows, PowerShell won't execute the plain `ar.io` shell script that npm generates. Use `ar.io.ps1` instead — it's installed alongside it automatically and works identically.
 
-### Windows: known bug
-
-There is a known bug where the CLI silently does nothing on Windows due to a path separator mismatch in `cli.js`. A fix has been submitted — track it [here](https://github.com/ar-io/ar-io-sdk/pulls).
-
-**Workaround:**
-
-1. Install the SDK locally instead of globally:
 ```powershell
-npm install "@ar.io/sdk"
+ar.io.ps1 --help
 ```
 
-2. Create a file called `ario.cjs` in your project root with this content:
-```js
-process.argv[1] = 'cli/cli.js';
-require('./node_modules/@ar.io/sdk/lib/cjs/cli/cli.js');
-```
-
-> The file must be `.cjs` (not `.js`) if your project has `"type": "module"` in its `package.json`, otherwise Node will throw a `require is not defined` error.
-
-3. Use `node ario.cjs` in place of `ar.io` for all commands.
+This applies to all commands below. On macOS/Linux use `ar.io`, on Windows use `ar.io.ps1`.
 
 ---
 
@@ -64,7 +47,7 @@ ar.io get-arns-record --name my-domain --mainnet
 
 **Windows:**
 ```powershell
-node ario.cjs get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
 ```
 
 If it returns a record, the name is taken. If it errors with not found, you're good to go.
@@ -80,7 +63,7 @@ ar.io get-token-cost --name my-domain --type lease --years 1 --mainnet
 
 **Windows:**
 ```powershell
-node ario.cjs get-token-cost --name my-domain --type lease --years 1 --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 get-token-cost --name my-domain --type lease --years 1 --mainnet --cu-url https://cu.ardrive.io
 ```
 
 ---
@@ -94,7 +77,7 @@ ar.io buy-record --name my-domain --type lease --years 1 --wallet-file ./wallet.
 
 **Windows:**
 ```powershell
-node ario.cjs buy-record --name my-domain --type lease --years 1 --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 buy-record --name my-domain --type lease --years 1 --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
 ```
 
 For a permanent registration:
@@ -106,7 +89,7 @@ ar.io buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --
 
 **Windows:**
 ```powershell
-node ario.cjs buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
 ```
 
 ### All available flags
@@ -137,7 +120,7 @@ node ario.cjs buy-record --name my-domain --type permabuy --wallet-file ./wallet
 
 ### Note on `--cu-url`
 
-The SDK defaults to `https://cu.ardrive.io` as its compute unit. If you get a `Failed to evaluate dry-run` error, pass it explicitly:
+If you get a `Failed to evaluate dry-run` error, pass the compute unit URL explicitly:
 
 ```bash
 ar.io get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
@@ -154,7 +137,7 @@ ar.io get-arns-record --name my-domain --mainnet
 
 **Windows:**
 ```powershell
-node ario.cjs get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
 ```
 
 Expected output includes `processId`, `type`, `startTimestamp`, and `endTimestamp` (lease only).
@@ -173,13 +156,12 @@ ar.io buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --
 ar.io get-arns-record --name my-domain --mainnet
 ```
 
-**Windows (until bug fix is merged):**
+**Windows:**
 ```powershell
-npm install "@ar.io/sdk"
-# Create ario.cjs manually (see step 1)
-node ario.cjs get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
-node ario.cjs get-token-cost --name my-domain --type lease --years 1 --mainnet --cu-url https://cu.ardrive.io
-node ario.cjs buy-record --name my-domain --type lease --years 1 --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
-node ario.cjs buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
-node ario.cjs get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
+npm install -g "@ar.io/sdk"
+ar.io.ps1 get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 get-token-cost --name my-domain --type lease --years 1 --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 buy-record --name my-domain --type lease --years 1 --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 buy-record --name my-domain --type permabuy --wallet-file ./wallet.json --mainnet --cu-url https://cu.ardrive.io
+ar.io.ps1 get-arns-record --name my-domain --mainnet --cu-url https://cu.ardrive.io
 ```
