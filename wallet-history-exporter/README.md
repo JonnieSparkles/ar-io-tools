@@ -24,12 +24,13 @@ A Node.js script to export complete transaction history from an Arweave wallet a
 
 ## Configuration
 
-Update the wallet address in `arweave-wallet-export.js`:
+You can pass the wallet address as the first CLI argument (recommended):
 
-```javascript
-// Line 5: Replace with your Arweave wallet address
-const walletAddress = 'YOUR_ARWEAVE_WALLET_ADDRESS_HERE';
+```bash
+node arweave-wallet-export.js YOUR_ARWEAVE_WALLET_ADDRESS
 ```
+
+If you don’t pass an argument, the script uses the built-in default wallet address near the top of `arweave-wallet-export.js`.
 
 You can also update the gateway URL if needed (defaults to `arweave.net`).
 
@@ -38,7 +39,7 @@ You can also update the gateway URL if needed (defaults to `arweave.net`).
 Run the script:
 
 ```bash
-node arweave-wallet-export.js
+node arweave-wallet-export.js YOUR_ARWEAVE_WALLET_ADDRESS
 ```
 
 The script will export data to `.exports/transaction_history_[timestamp].csv`.

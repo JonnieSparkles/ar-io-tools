@@ -2,7 +2,8 @@ const https = require('https');
 const fs = require('fs');
 const csvWriter = require('csv-write-stream');
 
-const walletAddress = '_izWq_r55uJyHnWi-GZJUnU6BZBf3UHBnwWt26ReLzM'; // replace with your Arweave wallet address
+const walletAddress =
+  process.argv[2] || 'OU48aJtcq3KjsEqSUWDVpynh1xP2Y1VI-bwiSukAktU'; // optionally pass wallet address as first CLI arg
 // const blockMin = 0; // set the minimum block height in the query range
 // const blockMax = 1205702; // set the maximum block height in the query range
 
