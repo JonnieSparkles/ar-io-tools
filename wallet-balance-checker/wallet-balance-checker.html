@@ -156,6 +156,7 @@
                 <th>Wallet Address</th>
                 <th>AR Balance</th>
                 <th>ARIO Balance</th>
+                <th>Wallet Value (USD)</th>
             </tr>
         </thead>
         <tbody id="resultsBody">
@@ -165,14 +166,16 @@
                 <td>TOTALS</td>
                 <td id="totalAR">-</td>
                 <td id="totalARIO">-</td>
+                <td id="totalWalletValueToken">-</td>
             </tr>
             <tr class="totals-row">
                 <td>Total Value (USD)</td>
                 <td id="usdAR">-</td>
                 <td id="usdARIO">-</td>
+                <td id="usdWalletTotal">-</td>
             </tr>
             <tr>
-                <td colspan="3" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
+                <td colspan="4" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
                     Grand Total (USD): <span id="usdGrandTotal"></span>
                 </td>
             </tr>
@@ -349,8 +352,33 @@
                 return decimals > 0 ? parts.join('.') : parts[0];
             }
 
+            function formatUsd(value) {
+                return Number(value).toLocaleString(undefined, {
+                    style: 'currency',
+                    currency: 'USD',
+                    minimumFractionDigits: 2
+                });
+            }
+
+            async function fetchTokenPrices(checkAR, checkARIO) {
+                const ids = [];
+                if (checkAR) ids.push('arweave');
+                if (checkARIO) ids.push('ar-io-network');
+
+                try {
+                    if (ids.length > 0) {
+                        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
+                        return await fetchJsonWithTimeout(url, { method: 'GET' });
+                    }
+                } catch (e) {
+                    // Price data is optional; balance checks should still complete.
+                }
+
+                return {};
+            }
+
             async function checkBalances() {
-                const addresses = parseAddresses(document.getElementById('walletAddresses').value);
+                const allAddresses = parseAddresses(document.getElementById('walletAddresses').value);
                 const errorDiv = document.getElementById('error');
                 const resultsTable = document.getElementById('results');
                 const loadingDiv = document.getElementById('loading');
@@ -363,6 +391,7 @@
 
                 // At least one checkbox must be checked
                 if (!checkAR && !checkARIO) {
+                    errorDiv.style.color = 'red';
                     errorDiv.textContent = 'Please select at least one balance type to check';
                     return;
                 }
@@ -374,6 +403,7 @@
                 document.getElementById('totalARIO').textContent = '-';
                 document.getElementById('usdAR').textContent = '-';
                 document.getElementById('usdARIO').textContent = '-';
+                document.getElementById('usdWalletTotal').textContent = '-';
                 document.getElementById('usdGrandTotal').textContent = '';
                 resultsBody.innerHTML = '';
 
@@ -381,24 +411,40 @@
                 document.getElementById('priceAR').textContent = 'AR: ...';
                 document.getElementById('priceARIO').textContent = 'ARIO: ...';
 
-                // Validate addresses
-                const invalidAddresses = addresses.filter(addr => !getAddressType(addr));
-                if (invalidAddresses.length > 0) {
-                    errorDiv.textContent = `Invalid addresses found: ${invalidAddresses.join(', ')}`;
+                // Validate addresses; skip invalid ones instead of failing the entire run
+                const invalidAddresses = allAddresses.filter(addr => !getAddressType(addr));
+                const addresses = allAddresses.filter(addr => !!getAddressType(addr));
+                if (addresses.length === 0) {
+                    errorDiv.style.color = 'red';
+                    errorDiv.textContent = 'No valid addresses found. Please provide at least one valid Arweave, Solana, or Ethereum wallet address.';
                     return;
                 }
 
-                errorDiv.textContent = '';
+                if (invalidAddresses.length > 0) {
+                    errorDiv.style.color = '#b26a00';
+                    errorDiv.textContent = `Skipping invalid addresses: ${invalidAddresses.join(', ')}`;
+                } else {
+                    errorDiv.style.color = 'red';
+                    errorDiv.textContent = '';
+                }
                 loadingDiv.style.display = 'block';
                 button.disabled = true;
                 resultsTable.style.display = 'table';
 
                 try {
                     console.log('Starting balance checks for addresses:', addresses);
+                    const prices = await fetchTokenPrices(checkAR, checkARIO);
+                    const arUsdPrice = prices['arweave']?.usd;
+                    const arioUsdPrice = prices['ar-io-network']?.usd;
 
                     for (const address of addresses) {
                         const row = document.createElement('tr');
                         const addrType = getAddressType(address);
+                        let walletArAmount = 0;
+                        let walletArioAmount = 0;
+                        let walletHasBalanceError = false;
+                        const arApplies = checkAR && addrType === 'arweave';
+                        const arioApplies = checkARIO && addrType !== 'arweave';
 
                         // Address cell
                         const addressCell = document.createElement('td');
@@ -412,11 +458,13 @@
                                     const winstonBalance = await arweave.wallets.getBalance(address);
                                     totalARWinston += BigInt(winstonBalance);
                                     const arBalance = arweave.ar.winstonToAr(winstonBalance);
+                                    walletArAmount = parseFloat(arBalance);
                                     const balanceCell = document.createElement('td');
                                     balanceCell.textContent = `${formatWithCommas(arBalance)} AR`;
                                     row.appendChild(balanceCell);
                                 } catch (error) {
                                     console.error('Error fetching AR balance:', error);
+                                    walletHasBalanceError = true;
                                     const errorCell = document.createElement('td');
                                     errorCell.textContent = 'Error';
                                     errorCell.style.color = 'red';
@@ -449,10 +497,12 @@
                                     } else {
                                         arioAmount = await checkARIOBalanceSolana(address);
                                     }
+                                    walletArioAmount = arioAmount;
                                     arioCell.textContent = `${formatWithCommas(arioAmount)} ARIO`;
                                     totalARIO += arioAmount;
                                 } catch (error) {
                                     console.error('Error fetching ARIO balance:', error);
+                                    walletHasBalanceError = true;
                                     if (isLikelyRpcAvailabilityError(error)) {
                                         arioCell.textContent = 'API Unavailable';
                                         arioCell.style.color = 'orange';
@@ -470,6 +520,45 @@
                             skipCell.style.color = '#999';
                             row.appendChild(skipCell);
                         }
+
+                        const walletValueCell = document.createElement('td');
+                        if (walletHasBalanceError) {
+                            walletValueCell.textContent = 'N/A';
+                            walletValueCell.style.color = '#999';
+                        } else {
+                            let walletUsd = 0;
+                            let hasApplicableToken = false;
+                            let missingPriceForApplicableToken = false;
+
+                            if (arApplies) {
+                                hasApplicableToken = true;
+                                if (typeof arUsdPrice === 'number') {
+                                    walletUsd += walletArAmount * arUsdPrice;
+                                } else {
+                                    missingPriceForApplicableToken = true;
+                                }
+                            }
+
+                            if (arioApplies) {
+                                hasApplicableToken = true;
+                                if (typeof arioUsdPrice === 'number') {
+                                    walletUsd += walletArioAmount * arioUsdPrice;
+                                } else {
+                                    missingPriceForApplicableToken = true;
+                                }
+                            }
+
+                            if (!hasApplicableToken) {
+                                walletValueCell.textContent = 'NA';
+                                walletValueCell.style.color = '#999';
+                            } else if (missingPriceForApplicableToken) {
+                                walletValueCell.textContent = 'N/A';
+                                walletValueCell.style.color = '#999';
+                            } else {
+                                walletValueCell.textContent = formatUsd(walletUsd);
+                            }
+                        }
+                        row.appendChild(walletValueCell);
 
                         resultsBody.appendChild(row);
                     }
@@ -490,7 +579,8 @@
                         ar: window._totalAR || 0,
                         ario: window._totalARIO || 0,
                         checkAR,
-                        checkARIO
+                        checkARIO,
+                        prices
                     });
 
                     // Update token price display
@@ -501,6 +591,7 @@
 
                 } catch (error) {
                     console.error('Error in checkBalances:', error);
+                    errorDiv.style.color = 'red';
                     errorDiv.textContent = `Error: ${error.message}`;
                 } finally {
                     loadingDiv.style.display = 'none';
@@ -508,27 +599,14 @@
                 }
             }
 
-            // Fetch prices from CoinGecko and update USD row
-            async function updateUSDRow({ ar, ario, checkAR, checkARIO }) {
-                const ids = [];
-                if (checkAR) ids.push('arweave');
-                if (checkARIO) ids.push('ar-io-network');
-                let prices = {};
-                try {
-                    if (ids.length > 0) {
-                        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd`;
-                        const resp = await fetch(url);
-                        prices = await resp.json();
-                    }
-                } catch (e) {
-                    prices = {};
-                }
+            // Use fetched CoinGecko prices to update USD totals rows
+            async function updateUSDRow({ ar, ario, checkAR, checkARIO, prices = {} }) {
                 let usdAR = '-';
                 let usdARIO = '-';
                 let grandTotal = 0;
                 let priceDisplay = { ar: undefined, ario: undefined };
                 if (checkAR && prices['arweave'] && prices['arweave'].usd) {
-                    usdAR = (ar * prices['arweave'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    usdAR = formatUsd(ar * prices['arweave'].usd);
                     grandTotal += ar * prices['arweave'].usd;
                     priceDisplay.ar = `$${prices['arweave'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}`;
                 } else if (checkAR) {
@@ -536,16 +614,19 @@
                     priceDisplay.ar = 'N/A';
                 }
                 if (checkARIO && prices['ar-io-network'] && prices['ar-io-network'].usd) {
-                    usdARIO = (ario * prices['ar-io-network'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+                    usdARIO = formatUsd(ario * prices['ar-io-network'].usd);
                     grandTotal += ario * prices['ar-io-network'].usd;
                     priceDisplay.ario = `$${prices['ar-io-network'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}`;
                 } else if (checkARIO) {
                     usdARIO = 'N/A';
                     priceDisplay.ario = 'N/A';
                 }
+                const missingSelectedPrice = (checkAR && usdAR === 'N/A') || (checkARIO && usdARIO === 'N/A');
+                const usdWalletTotal = missingSelectedPrice ? 'N/A' : formatUsd(grandTotal);
                 document.getElementById('usdAR').textContent = usdAR;
                 document.getElementById('usdARIO').textContent = usdARIO;
-                document.getElementById('usdGrandTotal').textContent = grandTotal > 0 ? grandTotal.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }) : '';
+                document.getElementById('usdWalletTotal').textContent = usdWalletTotal;
+                document.getElementById('usdGrandTotal').textContent = grandTotal > 0 ? formatUsd(grandTotal) : '';
                 return priceDisplay;
             }
 
@@ -604,7 +685,7 @@
 
     <div style="text-align: center; margin-top: 20px;">
         <div style="font-size: 12px; color: #666;">
-            v3.0.0
+            v3.1.0
         </div>
     </div>
 </body>
