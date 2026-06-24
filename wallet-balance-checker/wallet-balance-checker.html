@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AR.IO Wallet Balance Checker</title>
+    <title>Ar.io Wallet Balance Checker</title>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="wallet-balance-checker_jonniesparkles.ar.io">
-    <meta property="og:title" content="AR.IO Wallet Balance Checker">
+    <meta property="og:title" content="Ar.io Wallet Balance Checker">
     <meta property="og:description" content="Check the balance of your AR.IO wallet addresses. Simple, fast, and runs entirely in your browser.">
     <!-- Twitter -->
     <meta property="twitter:card" content="summary">
     <meta property="twitter:url" content="wallet-balance-checker_jonniesparkles.ar.io">
-    <meta property="twitter:title" content="AR.IO Wallet Balance Checker">
+    <meta property="twitter:title" content="Ar.io Wallet Balance Checker">
     <meta property="twitter:description" content="Check the balance of your AR.IO wallet addresses. Simple, fast, and runs entirely in your browser.">
 
     <!-- favicon -->
@@ -111,7 +111,7 @@
     </style>
 </head>
 <body>
-    <h1>AR.IO Wallet Balance Checker</h1>
+    <h1>Ar.io Wallet Balance Checker</h1>
     
     <div class="note">
         <strong>Tip:</strong> Enter Arweave addresses for AR balances, Solana addresses for ARIO (Solana), or Ethereum addresses for ARIO (Base). You can mix address types in a single check.
@@ -196,10 +196,17 @@
                 protocol: 'https'
             });
 
-            const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
+            const SOLANA_RPCS = [
+                // Browser-friendly public endpoints first (some "official" public RPCs block browser origins with 403)
+                'https://rpc.solanatracker.io/public',
+                'https://rpc.aex402.com/',
+                'https://solana-rpc.publicnode.com/'
+            ];
             const ARIO_SOLANA_MINT = 'DcNnMuFxwhgV4WY1HVSaSEgr92bv2b1vUvEKiNxWqHdF';
             const BASE_RPC = 'https://mainnet.base.org';
             const ARIO_BASE_CONTRACT = '0x138746adfA52909E5920def027f5a8dc1C7EfFb6';
+            const RPC_TIMEOUT_MS = 12000;
+            const SOLANA_RPC_TIMEOUT_MS = 8000;
 
             // Arweave: exactly 43 chars, base64url (may include - or _)
             // Solana: base58 chars only (no - _ 0 O I l), 32-44 chars, checked after Arweave
@@ -211,35 +218,80 @@
                 return null;
             }
 
+            async function fetchJsonWithTimeout(url, options, timeoutMs = RPC_TIMEOUT_MS) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                try {
+                    const resp = await fetch(url, { ...options, signal: controller.signal });
+                    if (!resp.ok) {
+                        throw new Error(`HTTP ${resp.status}`);
+                    }
+                    return await resp.json();
+                } catch (error) {
+                    if (error.name === 'AbortError') {
+                        throw new Error('Request timeout');
+                    }
+                    throw error;
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+            }
+
+            function isLikelyRpcAvailabilityError(error) {
+                const message = (error?.message || '').toLowerCase();
+                return (
+                    message.includes('network') ||
+                    message.includes('timeout') ||
+                    message.includes('cors') ||
+                    message.includes('http 403') ||
+                    message.includes('forbidden') ||
+                    message.includes('all solana rpc endpoints failed')
+                );
+            }
+
             async function checkARIOBalanceSolana(solanaAddress) {
                 console.log(`Checking Solana ARIO for ${solanaAddress}`);
-                const resp = await fetch(SOLANA_RPC, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        jsonrpc: '2.0',
-                        id: 1,
-                        method: 'getTokenAccountsByOwner',
-                        params: [
-                            solanaAddress,
-                            { mint: ARIO_SOLANA_MINT },
-                            { encoding: 'jsonParsed' }
-                        ]
-                    })
+                const requestBody = JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'getTokenAccountsByOwner',
+                    params: [
+                        solanaAddress,
+                        { mint: ARIO_SOLANA_MINT },
+                        { encoding: 'jsonParsed' }
+                    ]
                 });
-                const data = await resp.json();
-                if (data.result?.value?.length > 0) {
-                    const tokenAmount = data.result.value[0].account.data.parsed.info.tokenAmount;
-                    return parseFloat(tokenAmount.uiAmount || 0);
+
+                const endpointErrors = [];
+                for (const endpoint of SOLANA_RPCS) {
+                    try {
+                        const data = await fetchJsonWithTimeout(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: requestBody
+                        }, SOLANA_RPC_TIMEOUT_MS);
+
+                        if (data.error) {
+                            throw new Error(data.error.message || 'Solana RPC error');
+                        }
+                        if (data.result?.value?.length > 0) {
+                            const tokenAmount = data.result.value[0].account.data.parsed.info.tokenAmount;
+                            return parseFloat(tokenAmount.uiAmount || 0);
+                        }
+                        return 0;
+                    } catch (error) {
+                        endpointErrors.push(`${endpoint}: ${error.message}`);
+                    }
                 }
-                return 0;
+
+                throw new Error(`All Solana RPC endpoints failed (${endpointErrors.join(' | ')})`);
             }
 
             let arIOBaseDecimals = null;
             async function getARIOBaseDecimals() {
                 if (arIOBaseDecimals !== null) return arIOBaseDecimals;
                 try {
-                    const resp = await fetch(BASE_RPC, {
+                    const data = await fetchJsonWithTimeout(BASE_RPC, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -247,7 +299,9 @@
                             params: [{ to: ARIO_BASE_CONTRACT, data: '0x313ce567' }, 'latest']
                         })
                     });
-                    const data = await resp.json();
+                    if (!data.result || data.result === '0x') {
+                        throw new Error('Invalid decimals response');
+                    }
                     arIOBaseDecimals = parseInt(data.result, 16);
                 } catch (e) {
                     arIOBaseDecimals = 6;
@@ -259,7 +313,7 @@
                 console.log(`Checking Base ARIO for ${ethAddress}`);
                 const decimals = await getARIOBaseDecimals();
                 const callData = '0x70a08231' + ethAddress.slice(2).padStart(64, '0');
-                const resp = await fetch(BASE_RPC, {
+                const data = await fetchJsonWithTimeout(BASE_RPC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -269,7 +323,9 @@
                         params: [{ to: ARIO_BASE_CONTRACT, data: callData }, 'latest']
                     })
                 });
-                const data = await resp.json();
+                if (data.error) {
+                    throw new Error(data.error.message || 'Base RPC error');
+                }
                 if (data.result && data.result !== '0x' && data.result !== '0x0') {
                     return Number(BigInt(data.result)) / Math.pow(10, decimals);
                 }
@@ -397,9 +453,10 @@
                                     totalARIO += arioAmount;
                                 } catch (error) {
                                     console.error('Error fetching ARIO balance:', error);
-                                    if (error.message && (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('CORS'))) {
+                                    if (isLikelyRpcAvailabilityError(error)) {
                                         arioCell.textContent = 'API Unavailable';
                                         arioCell.style.color = 'orange';
+                                        arioCell.title = error.message || 'RPC unavailable';
                                     } else {
                                         arioCell.textContent = 'Error';
                                         arioCell.style.color = 'red';
@@ -547,7 +604,7 @@
 
     <div style="text-align: center; margin-top: 20px;">
         <div style="font-size: 12px; color: #666;">
-            v2.0.0
+            v3.0.0
         </div>
     </div>
 </body>
