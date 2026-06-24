@@ -20,29 +20,6 @@
     <link rel="icon" type="image/png" href="./favicon.png">
    
     <script src="https://unpkg.com/arweave@1.13.7/bundles/web.bundle.min.js"></script>
-    
-    <!-- Add browser polyfills for aoconnect -->
-    <script>
-        // Polyfill for process.env that aoconnect might need
-        if (typeof process === 'undefined') {
-            window.process = {
-                env: {},
-                browser: true
-            };
-        }
-    </script>
-    
-    <!-- Import aoconnect and AR.IO SDK as modules -->
-    <script type="module">
-        // Pin to a specific version known to work in browsers
-        import { dryrun, connect } from 'https://unpkg.com/@permaweb/aoconnect@0.0.57/dist/browser.js';
-        import { ARIO, AOProcess} from 'https://unpkg.com/@ar.io/sdk@3.13.0/bundles/web.bundle.min.js';
-        window.AOProcess = AOProcess;
-        window.connect = connect;
-        window.aoDryrun = dryrun;  // Make it available globally
-        window.ARIO = ARIO;  // Make ARIO available globally
-        // window.mARIOToken = mARIO;  // Make mARIOToken available globally
-    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -137,8 +114,7 @@
     <h1>AR.IO Wallet Balance Checker</h1>
     
     <div class="note">
-        <strong>Tip:</strong> AR balance checking is fast and reliable. If you encounter errors with AO or ARIO balances, 
-        you can use the checkboxes below to check only AR balances or any combination you prefer.
+        <strong>Tip:</strong> AR balance checking is fast and reliable. ARIO balances are fetched from Solana (for Arweave wallets) or Base (for Ethereum wallets). If you encounter errors, you can use the checkboxes below to check only specific balances.
     </div>
 
     <div class="input-container">
@@ -157,17 +133,12 @@
                     <input type="checkbox" id="checkARIO" checked style="margin-right: 5px;">
                     <label for="checkARIO">ARIO Balance</label>
                 </div>
-                <div style="display: flex; align-items: center;">
-                    <input type="checkbox" id="checkAO" checked style="margin-right: 5px;">
-                    <label for="checkAO">AO Balance</label>
-                </div>
             </div>
         </div>
         <div id="tokenPrices" style="margin: 10px 0 18px 0; font-size: 14px; color: #444;">
             <strong>Current Prices:</strong>
             <span id="priceAR">AR: ...</span> |
-            <span id="priceARIO">ARIO: ...</span> |
-            <span id="priceAO">AO: ...</span>
+            <span id="priceARIO">ARIO: ...</span>
         </div>
         
         <button id="checkButton">Check Balances</button>
@@ -185,7 +156,6 @@
                 <th>Wallet Address</th>
                 <th>AR Balance</th>
                 <th>ARIO Balance</th>
-                <th>AO Balance</th>
             </tr>
         </thead>
         <tbody id="resultsBody">
@@ -195,16 +165,14 @@
                 <td>TOTALS</td>
                 <td id="totalAR">-</td>
                 <td id="totalARIO">-</td>
-                <td id="totalAO">-</td>
             </tr>
             <tr class="totals-row">
                 <td>Total Value (USD)</td>
                 <td id="usdAR">-</td>
                 <td id="usdARIO">-</td>
-                <td id="usdAO">-</td>
             </tr>
             <tr>
-                <td colspan="4" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
+                <td colspan="3" style="text-align:center; font-weight:bold; background:#f8f9fa; font-size:1.1em;">
                     Grand Total (USD): <span id="usdGrandTotal"></span>
                 </td>
             </tr>
@@ -222,100 +190,119 @@
                 return;
             }
 
-            // Wait for aoDryrun to be available
-            await new Promise(resolve => {
-                const check = setInterval(() => {
-                    if (window.aoDryrun) {
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 100);
-            });
-
             const arweave = Arweave.init({
                 host: 'arweave.net',
                 port: 443,
                 protocol: 'https'
             });
 
-            // Initialize AR.IO SDK using the recommended pattern from docs
-            const ario = ARIO.mainnet();
-            
-            // Define AO process ID for checking AO balances
-            const AO_PROCESS_ID = '0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc';
-            const ARMSTRONG_TO_AO = 1000000000000;
+            const SOLANA_RPC = 'https://api.mainnet-beta.solana.com';
+            const ARIO_SOLANA_MINT = 'DcNnMuFxwhgV4WY1HVSaSEgr92bv2b1vUvEKiNxWqHdF';
+            const BASE_RPC = 'https://mainnet.base.org';
+            const ARIO_BASE_CONTRACT = '0x138746adfA52909E5920def027f5a8dc1C7EfFb6';
+
+            // Base58 alphabet (Bitcoin/Solana)
+            const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+            function base58Encode(bytes) {
+                let num = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''));
+                let result = '';
+                while (num > 0n) {
+                    result = BASE58_ALPHABET[Number(num % 58n)] + result;
+                    num = num / 58n;
+                }
+                for (const byte of bytes) {
+                    if (byte === 0) result = '1' + result;
+                    else break;
+                }
+                return result;
+            }
+
+            // Convert Arweave base64url address to Solana base58 address
+            // Both are ed25519 public keys — same 32 bytes, different encoding
+            function arweaveToSolanaAddress(arweaveAddr) {
+                const b64 = arweaveAddr.replace(/-/g, '+').replace(/_/g, '/');
+                const binaryStr = atob(b64);
+                const bytes = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                    bytes[i] = binaryStr.charCodeAt(i);
+                }
+                return base58Encode(bytes);
+            }
+
+            async function checkARIOBalanceSolana(arweaveAddress) {
+                const solanaAddress = arweaveToSolanaAddress(arweaveAddress);
+                console.log(`Checking Solana ARIO for ${arweaveAddress} (Solana: ${solanaAddress})`);
+                const resp = await fetch(SOLANA_RPC, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'getTokenAccountsByOwner',
+                        params: [
+                            solanaAddress,
+                            { mint: ARIO_SOLANA_MINT },
+                            { encoding: 'jsonParsed' }
+                        ]
+                    })
+                });
+                const data = await resp.json();
+                if (data.result?.value?.length > 0) {
+                    const tokenAmount = data.result.value[0].account.data.parsed.info.tokenAmount;
+                    return parseFloat(tokenAmount.uiAmount || 0);
+                }
+                return 0;
+            }
+
+            let arIOBaseDecimals = null;
+            async function getARIOBaseDecimals() {
+                if (arIOBaseDecimals !== null) return arIOBaseDecimals;
+                try {
+                    const resp = await fetch(BASE_RPC, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: '2.0', id: 1, method: 'eth_call',
+                            params: [{ to: ARIO_BASE_CONTRACT, data: '0x313ce567' }, 'latest']
+                        })
+                    });
+                    const data = await resp.json();
+                    arIOBaseDecimals = parseInt(data.result, 16);
+                } catch (e) {
+                    arIOBaseDecimals = 6;
+                }
+                return arIOBaseDecimals;
+            }
+
+            async function checkARIOBalanceBase(ethAddress) {
+                console.log(`Checking Base ARIO for ${ethAddress}`);
+                const decimals = await getARIOBaseDecimals();
+                const callData = '0x70a08231' + ethAddress.slice(2).padStart(64, '0');
+                const resp = await fetch(BASE_RPC, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: 1,
+                        method: 'eth_call',
+                        params: [{ to: ARIO_BASE_CONTRACT, data: callData }, 'latest']
+                    })
+                });
+                const data = await resp.json();
+                if (data.result && data.result !== '0x' && data.result !== '0x0') {
+                    return Number(BigInt(data.result)) / Math.pow(10, decimals);
+                }
+                return 0;
+            }
 
             function parseAddresses(input) {
-                // First split by commas
                 const commaList = input.split(',');
-                
-                // Then split each item by newlines and flatten
                 const addresses = commaList
                     .flatMap(item => item.split('\n'))
                     .map(addr => addr.trim())
                     .filter(addr => addr.length > 0);
-                
-                // Remove duplicates
                 return [...new Set(addresses)];
-            }
-
-            async function checkAOBalance(address) {
-                try {
-                    if (!window.aoDryrun) {
-                        console.log('aoDryrun not available');
-                        return '0';
-                    }
-
-                    // Based on docs, timeout issues are common - add better error handling
-                    try {
-                        console.log('Sending dryrun request for address:', address);
-                        const response = await window.aoDryrun({
-                            process: AO_PROCESS_ID,
-                            tags: [
-                                { name: 'Action', value: 'Balances' }
-                            ]
-                        });
-                        console.log('AO response:', response);
-
-                        if (response?.Messages?.length > 0) {
-                            const lastMessage = response.Messages[response.Messages.length - 1];
-                            if (lastMessage.Data) {
-                                const balances = typeof lastMessage.Data === 'string' 
-                                    ? JSON.parse(lastMessage.Data)
-                                    : lastMessage.Data;
-
-                                console.log('Parsed balances:', balances);
-                                console.log('Looking for address:', address);
-
-                                if (balances[address]) {
-                                    const rawBalance = balances[address];
-                                    const tokenBalance = (parseFloat(rawBalance) / ARMSTRONG_TO_AO).toFixed(6);
-                                    console.log(`Found balance: ${rawBalance} armstrongs (${tokenBalance} AO)`);
-                                    return tokenBalance;
-                                }
-                            }
-                        }
-                        
-                        // If we get here, the address wasn't found in the balances
-                        return '0';
-                    } catch (networkError) {
-                        console.error('Network error in AO balance check:', networkError);
-                        
-                        // Return a descriptive string for network errors
-                        if (networkError.message && (
-                            networkError.message.includes('timeout') || 
-                            networkError.message.includes('CORS') ||
-                            networkError.message.includes('network')
-                        )) {
-                            return 'API Unavailable';
-                        }
-                        
-                        return '0';
-                    }
-                } catch (error) {
-                    console.error('General error in checkAOBalance:', error);
-                    return '0';
-                }
             }
 
             // Helper to format numbers with commas and fixed decimals
@@ -333,35 +320,30 @@
                 const loadingDiv = document.getElementById('loading');
                 const button = document.getElementById('checkButton');
                 const resultsBody = document.getElementById('resultsBody');
-                
+
                 // Get checkbox states
                 const checkAR = document.getElementById('checkAR').checked;
                 const checkARIO = document.getElementById('checkARIO').checked;
-                const checkAO = document.getElementById('checkAO').checked;
-                
+
                 // At least one checkbox must be checked
-                if (!checkAR && !checkARIO && !checkAO) {
+                if (!checkAR && !checkARIO) {
                     errorDiv.textContent = 'Please select at least one balance type to check';
                     return;
                 }
 
                 // Reset totals and display
                 let totalARWinston = BigInt(0);
-                let totalAO = 0;
                 let totalARIO = 0;
                 document.getElementById('totalAR').textContent = '-';
-                document.getElementById('totalAO').textContent = '-';
                 document.getElementById('totalARIO').textContent = '-';
                 document.getElementById('usdAR').textContent = '-';
                 document.getElementById('usdARIO').textContent = '-';
-                document.getElementById('usdAO').textContent = '-';
                 document.getElementById('usdGrandTotal').textContent = '';
                 resultsBody.innerHTML = '';
 
                 // Show loading for token prices
                 document.getElementById('priceAR').textContent = 'AR: ...';
                 document.getElementById('priceARIO').textContent = 'ARIO: ...';
-                document.getElementById('priceAO').textContent = 'AO: ...';
 
                 // Validate addresses
                 const invalidAddresses = addresses.filter(addr => !(/^[a-zA-Z0-9_-]{43}$/.test(addr) || /^0x[a-fA-F0-9]{40}$/.test(addr)));
@@ -377,20 +359,20 @@
 
                 try {
                     console.log('Starting balance checks for addresses:', addresses);
-                    console.log('Checking: AR:', checkAR, 'ARIO:', checkARIO, 'AO:', checkAO);
-                    
+                    const ethRegex = /^0x[a-fA-F0-9]{40}$/;
+
                     for (const address of addresses) {
                         const row = document.createElement('tr');
-                        
-                        // Add address cell
+                        const isEth = ethRegex.test(address);
+
+                        // Address cell
                         const addressCell = document.createElement('td');
                         addressCell.textContent = address;
                         row.appendChild(addressCell);
 
                         // AR Balance
                         if (checkAR) {
-                            const ethRegex = /^0x[a-fA-F0-9]{40}$/;
-                            if (ethRegex.test(address)) {
+                            if (isEth) {
                                 const naCell = document.createElement('td');
                                 naCell.textContent = 'NA';
                                 naCell.style.color = '#999';
@@ -418,66 +400,29 @@
                             row.appendChild(skipCell);
                         }
 
-                        // ARIO Balance
+                        // ARIO Balance — Solana for Arweave wallets, Base for Ethereum wallets
                         if (checkARIO) {
                             const arioCell = document.createElement('td');
                             try {
-                                // Using the documented getBalance method
-                                try {
-                                    const arioBalance = await ario.getBalance({
-                                        address: address
-                                    });
-                                    // The documentation indicates that ARIO amounts are in microARIO (1,000,000 = 1 ARIO)
-                                    const arioFormatted = (parseFloat(arioBalance || '0') / 1000000);
-                                    arioCell.textContent = `${formatWithCommas(arioFormatted)} ARIO`;
-                                    totalARIO += parseFloat(arioFormatted);
-                                } catch (arioError) {
-                                    console.error('ARIO SDK error:', arioError);
-                                    // If SDK call fails with network error, try alternate method
-                                    if (arioError.message && (
-                                        arioError.message.includes('network') || 
-                                        arioError.message.includes('timeout') ||
-                                        arioError.message.includes('CORS')
-                                    )) {
-                                        arioCell.textContent = 'API Unavailable';
-                                    } else {
-                                        arioCell.textContent = '0 ARIO';
-                                    }
-                                    arioCell.style.color = 'orange';
+                                let arioAmount;
+                                if (isEth) {
+                                    arioAmount = await checkARIOBalanceBase(address);
+                                } else {
+                                    arioAmount = await checkARIOBalanceSolana(address);
                                 }
+                                arioCell.textContent = `${formatWithCommas(arioAmount)} ARIO`;
+                                totalARIO += arioAmount;
                             } catch (error) {
                                 console.error('Error fetching ARIO balance:', error);
-                                arioCell.textContent = 'Error';
-                                arioCell.style.color = 'red';
+                                if (error.message && (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('CORS'))) {
+                                    arioCell.textContent = 'API Unavailable';
+                                    arioCell.style.color = 'orange';
+                                } else {
+                                    arioCell.textContent = 'Error';
+                                    arioCell.style.color = 'red';
+                                }
                             }
                             row.appendChild(arioCell);
-                        } else {
-                            const skipCell = document.createElement('td');
-                            skipCell.textContent = 'Skipped';
-                            skipCell.style.color = '#999';
-                            row.appendChild(skipCell);
-                        }
-
-                        // AO Balance
-                        if (checkAO) {
-                            const aoCell = document.createElement('td');
-                            try {
-                                const aoBalance = await checkAOBalance(address);
-                                if (aoBalance === 'API Unavailable') {
-                                    aoCell.textContent = 'API Unavailable';
-                                    aoCell.style.color = 'orange';
-                                } else if (aoBalance && aoBalance !== '0') {
-                                    aoCell.textContent = `${formatWithCommas(aoBalance)} AO`;
-                                    totalAO += parseFloat(aoBalance);
-                                } else {
-                                    aoCell.textContent = '0 AO';
-                                }
-                            } catch (error) {
-                                console.error('Error fetching AO balance:', error);
-                                aoCell.textContent = 'Error';
-                                aoCell.style.color = 'red';
-                            }
-                            row.appendChild(aoCell);
                         } else {
                             const skipCell = document.createElement('td');
                             skipCell.textContent = 'Skipped';
@@ -492,32 +437,25 @@
                     if (checkAR) {
                         const totalAR = arweave.ar.winstonToAr(totalARWinston.toString());
                         document.getElementById('totalAR').textContent = `${formatWithCommas(totalAR)} AR`;
-                        window._totalAR = parseFloat(totalAR); // for USD calc
+                        window._totalAR = parseFloat(totalAR);
                     }
                     if (checkARIO) {
                         document.getElementById('totalARIO').textContent = `${formatWithCommas(totalARIO)} ARIO`;
-                        window._totalARIO = totalARIO; // for USD calc
-                    }
-                    if (checkAO) {
-                        document.getElementById('totalAO').textContent = `${formatWithCommas(totalAO)} AO`;
-                        window._totalAO = totalAO; // for USD calc
+                        window._totalARIO = totalARIO;
                     }
 
                     // Fetch USD prices and update USD row
                     const lastPrices = await updateUSDRow({
                         ar: window._totalAR || 0,
                         ario: window._totalARIO || 0,
-                        ao: window._totalAO || 0,
                         checkAR,
-                        checkARIO,
-                        checkAO
+                        checkARIO
                     });
 
                     // Update token price display
                     if (lastPrices) {
                         document.getElementById('priceAR').textContent = 'AR: ' + (lastPrices.ar !== undefined ? lastPrices.ar : 'N/A');
                         document.getElementById('priceARIO').textContent = 'ARIO: ' + (lastPrices.ario !== undefined ? lastPrices.ario : 'N/A');
-                        document.getElementById('priceAO').textContent = 'AO: ' + (lastPrices.ao !== undefined ? lastPrices.ao : 'N/A');
                     }
 
                 } catch (error) {
@@ -530,12 +468,10 @@
             }
 
             // Fetch prices from CoinGecko and update USD row
-            async function updateUSDRow({ ar, ario, ao, checkAR, checkARIO, checkAO }) {
-                // CoinGecko IDs
+            async function updateUSDRow({ ar, ario, checkAR, checkARIO }) {
                 const ids = [];
                 if (checkAR) ids.push('arweave');
                 if (checkARIO) ids.push('ar-io-network');
-                if (checkAO) ids.push('ao-computer');
                 let prices = {};
                 try {
                     if (ids.length > 0) {
@@ -544,19 +480,16 @@
                         prices = await resp.json();
                     }
                 } catch (e) {
-                    // fallback: all N/A
                     prices = {};
                 }
                 let usdAR = '-';
                 let usdARIO = '-';
-                let usdAO = '-';
                 let grandTotal = 0;
-                // For returning prices for display
-                let priceDisplay = { ar: undefined, ario: undefined, ao: undefined };
+                let priceDisplay = { ar: undefined, ario: undefined };
                 if (checkAR && prices['arweave'] && prices['arweave'].usd) {
                     usdAR = (ar * prices['arweave'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
                     grandTotal += ar * prices['arweave'].usd;
-                    priceDisplay.ar = prices['arweave'].usd ? `$${prices['arweave'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                    priceDisplay.ar = `$${prices['arweave'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}`;
                 } else if (checkAR) {
                     usdAR = 'N/A';
                     priceDisplay.ar = 'N/A';
@@ -564,22 +497,13 @@
                 if (checkARIO && prices['ar-io-network'] && prices['ar-io-network'].usd) {
                     usdARIO = (ario * prices['ar-io-network'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
                     grandTotal += ario * prices['ar-io-network'].usd;
-                    priceDisplay.ario = prices['ar-io-network'].usd ? `$${prices['ar-io-network'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
+                    priceDisplay.ario = `$${prices['ar-io-network'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}`;
                 } else if (checkARIO) {
                     usdARIO = 'N/A';
                     priceDisplay.ario = 'N/A';
                 }
-                if (checkAO && prices['ao-computer'] && prices['ao-computer'].usd) {
-                    usdAO = (ao * prices['ao-computer'].usd).toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-                    grandTotal += ao * prices['ao-computer'].usd;
-                    priceDisplay.ao = prices['ao-computer'].usd ? `$${prices['ao-computer'].usd.toLocaleString(undefined, {minimumFractionDigits: 4, maximumFractionDigits: 8})}` : 'N/A';
-                } else if (checkAO) {
-                    usdAO = 'N/A';
-                    priceDisplay.ao = 'N/A';
-                }
                 document.getElementById('usdAR').textContent = usdAR;
                 document.getElementById('usdARIO').textContent = usdARIO;
-                document.getElementById('usdAO').textContent = usdAO;
                 document.getElementById('usdGrandTotal').textContent = grandTotal > 0 ? grandTotal.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }) : '';
                 return priceDisplay;
             }
@@ -639,7 +563,7 @@
 
     <div style="text-align: center; margin-top: 20px;">
         <div style="font-size: 12px; color: #666;">
-            v1.0.0
+            v2.0.0
         </div>
     </div>
 </body>
