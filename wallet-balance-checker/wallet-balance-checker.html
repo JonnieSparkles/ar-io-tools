@@ -114,7 +114,7 @@
     <h1>AR.IO Wallet Balance Checker</h1>
     
     <div class="note">
-        <strong>Tip:</strong> AR balance checking is fast and reliable. ARIO balances are fetched from Solana (for Arweave wallets) or Base (for Ethereum wallets). If you encounter errors, you can use the checkboxes below to check only specific balances.
+        <strong>Tip:</strong> Enter Arweave addresses for AR balances, Solana addresses for ARIO (Solana), or Ethereum addresses for ARIO (Base). You can mix address types in a single check.
     </div>
 
     <div class="input-container">
@@ -201,38 +201,18 @@
             const BASE_RPC = 'https://mainnet.base.org';
             const ARIO_BASE_CONTRACT = '0x138746adfA52909E5920def027f5a8dc1C7EfFb6';
 
-            // Base58 alphabet (Bitcoin/Solana)
-            const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-            function base58Encode(bytes) {
-                let num = BigInt('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(''));
-                let result = '';
-                while (num > 0n) {
-                    result = BASE58_ALPHABET[Number(num % 58n)] + result;
-                    num = num / 58n;
-                }
-                for (const byte of bytes) {
-                    if (byte === 0) result = '1' + result;
-                    else break;
-                }
-                return result;
+            // Arweave: exactly 43 chars, base64url (may include - or _)
+            // Solana: base58 chars only (no - _ 0 O I l), 32-44 chars, checked after Arweave
+            // Ethereum: 0x + 40 hex chars
+            function getAddressType(addr) {
+                if (/^0x[a-fA-F0-9]{40}$/.test(addr)) return 'ethereum';
+                if (/^[a-zA-Z0-9_-]{43}$/.test(addr)) return 'arweave';
+                if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) return 'solana';
+                return null;
             }
 
-            // Convert Arweave base64url address to Solana base58 address
-            // Both are ed25519 public keys — same 32 bytes, different encoding
-            function arweaveToSolanaAddress(arweaveAddr) {
-                const b64 = arweaveAddr.replace(/-/g, '+').replace(/_/g, '/');
-                const binaryStr = atob(b64);
-                const bytes = new Uint8Array(binaryStr.length);
-                for (let i = 0; i < binaryStr.length; i++) {
-                    bytes[i] = binaryStr.charCodeAt(i);
-                }
-                return base58Encode(bytes);
-            }
-
-            async function checkARIOBalanceSolana(arweaveAddress) {
-                const solanaAddress = arweaveToSolanaAddress(arweaveAddress);
-                console.log(`Checking Solana ARIO for ${arweaveAddress} (Solana: ${solanaAddress})`);
+            async function checkARIOBalanceSolana(solanaAddress) {
+                console.log(`Checking Solana ARIO for ${solanaAddress}`);
                 const resp = await fetch(SOLANA_RPC, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -346,7 +326,7 @@
                 document.getElementById('priceARIO').textContent = 'ARIO: ...';
 
                 // Validate addresses
-                const invalidAddresses = addresses.filter(addr => !(/^[a-zA-Z0-9_-]{43}$/.test(addr) || /^0x[a-fA-F0-9]{40}$/.test(addr)));
+                const invalidAddresses = addresses.filter(addr => !getAddressType(addr));
                 if (invalidAddresses.length > 0) {
                     errorDiv.textContent = `Invalid addresses found: ${invalidAddresses.join(', ')}`;
                     return;
@@ -359,25 +339,19 @@
 
                 try {
                     console.log('Starting balance checks for addresses:', addresses);
-                    const ethRegex = /^0x[a-fA-F0-9]{40}$/;
 
                     for (const address of addresses) {
                         const row = document.createElement('tr');
-                        const isEth = ethRegex.test(address);
+                        const addrType = getAddressType(address);
 
                         // Address cell
                         const addressCell = document.createElement('td');
                         addressCell.textContent = address;
                         row.appendChild(addressCell);
 
-                        // AR Balance
+                        // AR Balance — Arweave wallets only
                         if (checkAR) {
-                            if (isEth) {
-                                const naCell = document.createElement('td');
-                                naCell.textContent = 'NA';
-                                naCell.style.color = '#999';
-                                row.appendChild(naCell);
-                            } else {
+                            if (addrType === 'arweave') {
                                 try {
                                     const winstonBalance = await arweave.wallets.getBalance(address);
                                     totalARWinston += BigInt(winstonBalance);
@@ -392,6 +366,11 @@
                                     errorCell.style.color = 'red';
                                     row.appendChild(errorCell);
                                 }
+                            } else {
+                                const naCell = document.createElement('td');
+                                naCell.textContent = 'NA';
+                                naCell.style.color = '#999';
+                                row.appendChild(naCell);
                             }
                         } else {
                             const skipCell = document.createElement('td');
@@ -400,26 +379,31 @@
                             row.appendChild(skipCell);
                         }
 
-                        // ARIO Balance — Solana for Arweave wallets, Base for Ethereum wallets
+                        // ARIO Balance — Solana wallets → Solana SPL, Ethereum wallets → Base ERC-20, Arweave → NA
                         if (checkARIO) {
                             const arioCell = document.createElement('td');
-                            try {
-                                let arioAmount;
-                                if (isEth) {
-                                    arioAmount = await checkARIOBalanceBase(address);
-                                } else {
-                                    arioAmount = await checkARIOBalanceSolana(address);
-                                }
-                                arioCell.textContent = `${formatWithCommas(arioAmount)} ARIO`;
-                                totalARIO += arioAmount;
-                            } catch (error) {
-                                console.error('Error fetching ARIO balance:', error);
-                                if (error.message && (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('CORS'))) {
-                                    arioCell.textContent = 'API Unavailable';
-                                    arioCell.style.color = 'orange';
-                                } else {
-                                    arioCell.textContent = 'Error';
-                                    arioCell.style.color = 'red';
+                            if (addrType === 'arweave') {
+                                arioCell.textContent = 'NA';
+                                arioCell.style.color = '#999';
+                            } else {
+                                try {
+                                    let arioAmount;
+                                    if (addrType === 'ethereum') {
+                                        arioAmount = await checkARIOBalanceBase(address);
+                                    } else {
+                                        arioAmount = await checkARIOBalanceSolana(address);
+                                    }
+                                    arioCell.textContent = `${formatWithCommas(arioAmount)} ARIO`;
+                                    totalARIO += arioAmount;
+                                } catch (error) {
+                                    console.error('Error fetching ARIO balance:', error);
+                                    if (error.message && (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('CORS'))) {
+                                        arioCell.textContent = 'API Unavailable';
+                                        arioCell.style.color = 'orange';
+                                    } else {
+                                        arioCell.textContent = 'Error';
+                                        arioCell.style.color = 'red';
+                                    }
                                 }
                             }
                             row.appendChild(arioCell);
