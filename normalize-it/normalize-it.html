@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arweave Normalized Address Converter</title>
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="normalize-it_jonniesparkles.ar.io">
+  <meta property="og:title" content="Cross-Chain to Arweave Address Normalizer">
+  <meta property="og:description" content="Convert Solana, EVM, or Arweave wallet addresses to their normalized Arweave format. Runs entirely in your browser.">
+  <meta property="twitter:card" content="summary">
+  <meta property="twitter:url" content="normalize-it_jonniesparkles.ar.io">
+  <meta property="twitter:title" content="Cross-Chain to Arweave Address Normalizer">
+  <meta property="twitter:description" content="Convert Solana, EVM, or Arweave wallet addresses to their normalized Arweave format. Runs entirely in your browser.">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+    input[type="text"] { width: 100%; box-sizing: border-box; padding: 0.5rem; font-family: inherit; }
+    button { margin-top: 0.75rem; padding: 0.5rem 1rem; cursor: pointer; }
+    #result { word-break: break-all; font-family: ui-monospace, monospace; min-height: 1.5rem; }
+    #status { color: #555; font-size: 0.9rem; margin-top: 0.5rem; }
+    .error { color: #b00020; }
+    .hint { color: #555; font-size: 0.9rem; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h2>Arweave Normalized Address Converter</h2>
+  <p>Enter a <strong>wallet address</strong> (Solana, EVM, or Arweave) to get its normalized Arweave-compatible address.</p>
+
+  <label for="walletAddress">Wallet address</label>
+  <input type="text" id="walletAddress" placeholder="Solana base58, 0x EVM, or Arweave address" autocomplete="off">
+  <button id="convertBtn" type="button">Convert</button>
+
+  <p id="status"></p>
+  <p><strong>Normalized address:</strong></p>
+  <p id="result"></p>
+  <button id="copyBtn" type="button" disabled>Copy</button>
+
+  <p class="hint">
+  Normalized addresses are a 43-character base64url SHA-256 digest used across the Arweave ecosystem.
+  Solana addresses map directly (the address is the public key). EVM addresses require recovering the
+  public key from an on-chain outgoing transaction — addresses that have never sent a transaction cannot be normalized here.
+  </p>
+
+  <script type="module">
+    import { ethers } from 'https://esm.sh/ethers@6.13.5';
+
+    const base58Alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+    const EVM_CHAINS = [
+      { name: 'Ethereum', blockscout: 'https://eth.blockscout.com', rpc: 'https://ethereum-rpc.publicnode.com' },
+      { name: 'Polygon', blockscout: 'https://polygon.blockscout.com', rpc: 'https://polygon-bor-rpc.publicnode.com' },
+      { name: 'Base', blockscout: 'https://base.blockscout.com', rpc: 'https://base-rpc.publicnode.com' },
+    ];
+
+    function base58Decode(input) {
+      const bytes = [0];
+      for (let i = 0; i < input.length; i++) {
+        const value = base58Alphabet.indexOf(input[i]);
+        if (value === -1) throw new Error('Invalid base58 character');
+
+        for (let j = 0; j < bytes.length; j++) bytes[j] *= 58;
+        bytes[0] += value;
+
+        for (let j = 0; j < bytes.length; j++) {
+          if (bytes[j] > 255) {
+            if (bytes[j + 1] === undefined) bytes[j + 1] = 0;
+            bytes[j + 1] += (bytes[j] / 256) | 0;
+            bytes[j] %= 256;
+          }
+        }
+      }
+
+      for (let k = 0; k < input.length && input[k] === '1'; k++) {
+        bytes.push(0);
+      }
+
+      return new Uint8Array(bytes.reverse());
+    }
+
+    function base64urlEncode(buffer) {
+      const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    async function sha256B64Url(bytes) {
+      const hash = await crypto.subtle.digest('SHA-256', bytes);
+      return base64urlEncode(new Uint8Array(hash));
+    }
+
+    function detectAddressType(addr) {
+      if (/^0x[a-fA-F0-9]{40}$/.test(addr)) return 'evm';
+      if (/^[a-zA-Z0-9_-]{43}$/.test(addr)) return 'arweave';
+      if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) return 'solana';
+      return null;
+    }
+
+    async function normalizeFromPublicKeyBytes(pubkeyBytes) {
+      return sha256B64Url(pubkeyBytes);
+    }
+
+    async function normalizeSolanaAddress(address) {
+      const pubkeyBytes = base58Decode(address);
+      if (pubkeyBytes.length !== 32) {
+        throw new Error(`Expected 32-byte Solana public key, got ${pubkeyBytes.length} bytes`);
+      }
+      return normalizeFromPublicKeyBytes(pubkeyBytes);
+    }
+
+    async function rpcCall(rpcUrl, method, params) {
+      if (!rpcUrl) throw new Error('RPC URL is not configured');
+      const response = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || `${method} failed`);
+      return data.result;
+    }
+
+    async function findEvmTransaction(address) {
+      for (const chain of EVM_CHAINS) {
+        try {
+          const url = `${chain.blockscout}/api/v2/addresses/${address}/transactions?filter=from`;
+          const response = await fetch(url);
+          if (!response.ok) continue;
+          const data = await response.json();
+          const hash = data.items?.[0]?.hash;
+          if (hash) return { hash, chain };
+        } catch {
+          // try next chain
+        }
+      }
+      return null;
+    }
+
+    function buildUnsignedTx(raw) {
+      const type = typeof raw.type === 'string' ? parseInt(raw.type, 16) : Number(raw.type);
+      if (type === 0) {
+        return {
+          type: 0,
+          chainId: raw.chainId,
+          nonce: raw.nonce,
+          to: raw.to,
+          value: raw.value,
+          gasLimit: raw.gas,
+          gasPrice: raw.gasPrice,
+          data: raw.input,
+        };
+      }
+      if (type === 1) {
+        return {
+          type: 1,
+          chainId: raw.chainId,
+          nonce: raw.nonce,
+          to: raw.to,
+          value: raw.value,
+          gasLimit: raw.gas,
+          gasPrice: raw.gasPrice,
+          data: raw.input,
+          accessList: raw.accessList ?? [],
+        };
+      }
+      if (type === 2) {
+        return {
+          type: 2,
+          chainId: raw.chainId,
+          nonce: raw.nonce,
+          to: raw.to,
+          value: raw.value,
+          gasLimit: raw.gas,
+          data: raw.input,
+          maxFeePerGas: raw.maxFeePerGas,
+          maxPriorityFeePerGas: raw.maxPriorityFeePerGas,
+          accessList: raw.accessList ?? [],
+        };
+      }
+      throw new Error(`Unsupported transaction type: ${type}`);
+    }
+
+    async function recoverEvmPublicKey(rawTx) {
+      const unsigned = buildUnsignedTx(rawTx);
+      const txObj = ethers.Transaction.from(unsigned);
+      const sig = ethers.Signature.from({
+        r: rawTx.r,
+        s: rawTx.s,
+        v: rawTx.yParity ?? rawTx.v,
+      });
+      const pubKey = ethers.SigningKey.recoverPublicKey(txObj.unsignedHash, sig);
+      const recoveredAddress = ethers.computeAddress(pubKey);
+      if (recoveredAddress.toLowerCase() !== rawTx.from.toLowerCase()) {
+        throw new Error('Recovered public key does not match transaction sender');
+      }
+      return ethers.getBytes(pubKey);
+    }
+
+    async function normalizeEvmAddress(address) {
+      const match = await findEvmTransaction(address);
+      if (!match) {
+        throw new Error(
+          'No outgoing transaction found for this EVM address on Ethereum, Polygon, or Base. ' +
+          'Public key recovery requires at least one sent transaction.'
+        );
+      }
+
+      const { hash, chain } = match;
+      const rawTx = await rpcCall(chain.rpc, 'eth_getTransactionByHash', [hash]);
+      if (!rawTx) throw new Error('Could not fetch transaction from RPC');
+
+      const pubkeyBytes = await recoverEvmPublicKey(rawTx);
+      return {
+        normalizedAddress: await normalizeFromPublicKeyBytes(pubkeyBytes),
+        chain: chain.name,
+        txHash: hash,
+      };
+    }
+
+    function setStatus(message, isError = false) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = isError ? 'error' : '';
+    }
+
+    function setResult(text) {
+      document.getElementById('result').textContent = text;
+      document.getElementById('copyBtn').disabled = !text;
+    }
+
+    async function convert() {
+      const input = document.getElementById('walletAddress');
+      const btn = document.getElementById('convertBtn');
+      const addr = input.value.trim();
+      setResult('');
+      setStatus('');
+
+      if (!addr) {
+        setStatus('Enter a wallet address.', true);
+        return;
+      }
+
+      const type = detectAddressType(addr);
+      if (!type) {
+        setStatus('Unrecognized address format. Use a Solana base58, EVM 0x, or 43-character Arweave address.', true);
+        return;
+      }
+
+      btn.disabled = true;
+      try {
+        if (type === 'arweave') {
+          setStatus('Arweave addresses are already normalized.');
+          setResult(addr);
+          return;
+        }
+
+        if (type === 'solana') {
+          setStatus('Converted from Solana wallet address.');
+          setResult(await normalizeSolanaAddress(addr));
+          return;
+        }
+
+        setStatus('Looking up an outgoing transaction to recover the public key…');
+        const { normalizedAddress, chain, txHash } = await normalizeEvmAddress(addr);
+        setStatus(`Recovered public key from a ${chain} transaction (${txHash}).`);
+        setResult(normalizedAddress);
+      } catch (error) {
+        setStatus(error.message || String(error), true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById('convertBtn').addEventListener('click', convert);
+    document.getElementById('walletAddress').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') convert();
+    });
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      const text = document.getElementById('result').textContent;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('Copied to clipboard.');
+      } catch (error) {
+        setStatus('Failed to copy: ' + error.message, true);
+      }
+    });
+  </script>
+</body>
+</html>
